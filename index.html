@@ -1,1 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        .detailed-weather {
+            position: relative;
+            border: 2px solid var(--search-background);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.2);
+            font-size: 1.5rem;
+            padding: 20px;
+            border-radius: 30px;
+            margin: 20px 0 0;
+            text-align: center;
+            color: #f9f9f9;
+            transition: background 0.5s ease-in-out;
+            user-select: none;
+            font-variant-numeric: tabular-nums;
+        }
 
+        .detailed-weather::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out; /* Transition for opacity */
+        }
+        
+        .detailed-weather.transitioning::after {
+            opacity: 1; /* Make the pseudo-element visible during transition */
+        }
+
+        .detailed-weather .location-text,
+        .detailed-weather h2,
+        .detailed-weather p,
+        .detailed-weather .weather-icon,
+        .detailed-weather .additional-info,
+        .detailed-weather .hourly-forecast,
+        .detailed-weather .forecast-container {
+            position: relative;
+            z-index: 10; /* Higher z-index than weather elements */
+        }
+
+        .detailed-weather .weather-icon {
+            font-size: 5rem;
+            display: block;
+            margin: 30px 0 20px;
+            user-select: none;
+        }
+
+        .detailed-weather h2 {
+            font-size: 3.5rem;
+            margin: 20px 0 20px;
+            user-select: none;
+            color: #f9f9f9;
+        }
+
+        .location-text {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            font-weight: normal;
+            color: #f9f9f9;
+            user-select: none;
+        }
+
+        .additional-info {
+            font-size: 1rem;
+            color: #f9f9f9;
+            margin-top: 15px;
+            user-select: none;
+        }
+
+        .forecast-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            user-select: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+
+        .forecast-day {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 20px;
+            text-align: center;
+            flex: 1 1 18%;
+            margin: 5px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .forecast-icon {
+            font-size: 2rem;
+            user-select: none;
+            font-family: 'Material Symbols Rounded', sans-serif;
+            font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .forecast-day p {
+            margin: 5px 0;
+            user-select: none;
+        }
+
+        .forecast-day .day-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #f9f9f9;
+            user-select: none;
+        }
+
+        .hourly-forecast {
+            margin-top: 30px;
+            text-align: left;
+            color: #f9f9f9;
+            user-select: none;
+        }
+
+        .hour {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+            border-radius: 5px;
+            user-select: none;
+        }
+
+        .hour.first {
+            border-radius: 20px 20px 5px 5px;
+            user-select: none;
+        }
+
+        .hour.last {
+            border-radius: 5px 5px 20px 20px;
+            user-select: none;
+        }
+
+    /* Weather Effects CSS */
+    /* Weather Elements Container */
+    .weather-elements-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+      border-radius: 30px;
+      opacity: 50%;
+    }
+    
+    /* Sun */
+    .sun {
+      position: absolute;
+      border-radius: 50%;
+      z-index: 2;
+    }
+    
+    .sun.morning {
+      width: 60px;
+      height: 60px;
+      background: #ffe87c;
+      box-shadow: 0 0 30px #ff9500, 0 0 60px #ffcb70;
+      left: 10%;
+      top: 20%;
+    }
+    
+    .sun.midday {
+      width: 70px;
+      height: 70px;
+      background: #fff9c4;
+      box-shadow: 0 0 40px #ffee58, 0 0 80px #ffeb3b;
+      left: 50%;
+      top: 15%;
+      transform: translateX(-50%);
+    }
+    
+    .sun.evening {
+      width: 60px;
+      height: 60px;
+      background: #ff9800;
+      box-shadow: 0 0 30px #ff5722, 0 0 60px #ef6c00;
+      right: 10%;
+      top: 20%;
+    }
+    
+    .sun.behind-clouds {
+      opacity: 0.7;
+      filter: blur(2px);
+    }
+    
+    /* Sunrays */
+    .sunrays {
+      position: absolute;
+      z-index: 1;
+    }
+    
+    .sunrays.morning {
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(255, 236, 95, 0.4) 0%, rgba(255, 236, 95, 0) 70%);
+      left: 10%;
+      top: 20%;
+      transform: translate(-20px, -20px);
+      animation: pulsate 4s infinite ease-in-out;
+    }
+    
+    .sunrays.midday {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(255, 245, 157, 0.5) 0%, rgba(255, 245, 157, 0) 70%);
+      left: 50%;
+      top: 15%;
+      transform: translate(-60px, -25px);
+      animation: pulsate 4s infinite ease-in-out;
+    }
+    
+    .sunrays.evening {
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, rgba(255, 152, 0, 0.4) 0%, rgba(255, 152, 0, 0) 70%);
+      right: 10%;
+      top: 20%;
+      transform: translate(20px, -20px);
+      animation: pulsate 4s infinite ease-in-out;
+    }
+    
+    .sunrays.faded {
+      opacity: 0.6;
+    }
+    
+    /* Moon */
+    .moon {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        background: #e6e6e6;
+        border-radius: 50%;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        right: 15%;
+        top: 15%;
+        z-index: 2;
+    }
+    
+    .moon.night {
+        background: linear-gradient(45deg, #e6e6e6, #ffffff);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 0 0 40px rgba(255, 255, 255, 0.1);
+    }
+    
+    .moon.behind-clouds {
+        opacity: 0.7;
+        filter: blur(1px);
+    }
+    
+    /* Stars */
+    .stars {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(1px 1px at 25% 15%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 50% 25%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 75% 5%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1.5px 1.5px at 15% 45%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1.5px 1.5px at 35% 65%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 85% 35%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1.5px 1.5px at 65% 75%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 95% 55%, white, rgba(255, 255, 255, 0));
+        z-index: 1;
+    }
+    
+    .stars.faded {
+        opacity: 0.6;
+    }
+    
+    .stars.sparse {
+        background-image: 
+            radial-gradient(1px 1px at 25% 15%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 75% 5%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1.5px 1.5px at 35% 65%, white, rgba(255, 255, 255, 0)),
+            radial-gradient(1px 1px at 85% 35%, white, rgba(255, 255, 255, 0));
+    }
+    
+    /* Clouds */
+    .clouds {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 3;
+        pointer-events: none;
+    }
+    
+    .clouds.few {
+        background: none;
+    }
+    
+    .clouds.few::before,
+    .clouds.few::after {
+        content: '';
+        position: absolute;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        filter: blur(10px);
+    }
+    
+    .clouds.few::before {
+        width: 100px;
+        height: 60px;
+        left: 20%;
+        top: 15%;
+    }
+    
+    .clouds.few::after {
+        width: 120px;
+        height: 70px;
+        right: 25%;
+        top: 20%;
+    }
+    
+    .clouds.scattered {
+        background: none;
+    }
+    
+    .clouds.scattered::before,
+    .clouds.scattered::after {
+        content: '';
+        position: absolute;
+    }
+    
+    .clouds.scattered::before {
+        width: 200px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 50px;
+        left: 10%;
+        top: 15%;
+        filter: blur(8px);
+        box-shadow: 
+            100px -10px 0 rgba(255, 255, 255, 0.8),
+            180px 20px 0 rgba(255, 255, 255, 0.7);
+    }
+    
+    .clouds.scattered::after {
+        width: 160px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 40px;
+        right: 15%;
+        top: 20%;
+        filter: blur(5px);
+        box-shadow: 
+            -70px 15px 0 rgba(255, 255, 255, 0.75);
+    }
+    
+    .clouds.broken {
+        background: none;
+    }
+    
+    .clouds.broken::before,
+    .clouds.broken::after {
+        content: '';
+        position: absolute;
+    }
+    
+    .clouds.broken::before {
+        width: 100%;
+        height: 50px;
+        background: rgba(220, 220, 220, 0.9);
+        border-radius: 50px;
+        top: 10%;
+        filter: blur(10px);
+        box-shadow: 
+            0 25px 0 rgba(210, 210, 210, 0.8),
+            0 50px 0 rgba(200, 200, 200, 0.7),
+            0 75px 0 rgba(190, 190, 190, 0.6);
+    }
+    
+    .clouds.broken::after {
+        width: 60%;
+        height: 40px;
+        background: rgba(230, 230, 230, 0.85);
+        border-radius: 40px;
+        left: 20%;
+        top: 30%;
+        filter: blur(8px);
+    }
+    
+    .clouds.overcast {
+        background: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100%;
+    }
+    
+    .clouds.overcast::before {
+        content: '';
+        position: absolute;
+        width: 120%;
+        height: 200px;
+        background: rgba(180, 180, 180, 0.9);
+        border-radius: 100px;
+        top: -50px;
+        left: -10%;
+        filter: blur(15px);
+        box-shadow: 
+            0 30px 0 rgba(175, 175, 175, 0.85),
+            0 60px 0 rgba(170, 170, 170, 0.8),
+            0 90px 0 rgba(165, 165, 165, 0.75);
+    }
+    
+    .clouds.dark {
+        background: none;
+    }
+    
+    .clouds.dark::before {
+        content: '';
+        position: absolute;
+        width: 120%;
+        height: 200px;
+        background: rgba(100, 100, 110, 0.9);
+        border-radius: 100px;
+        top: -50px;
+        left: -10%;
+        filter: blur(15px);
+        box-shadow: 
+            0 30px 0 rgba(90, 90, 100, 0.85),
+            0 60px 0 rgba(80, 80, 90, 0.8),
+            0 90px 0 rgba(70, 70, 80, 0.75);
+    }
+    
+    .clouds.light {
+        background: none;
+    }
+    
+    .clouds.light::before {
+        content: '';
+        position: absolute;
+        width: 120%;
+        height: 200px;
+        background: rgba(230, 230, 235, 0.9);
+        border-radius: 100px;
+        top: -50px;
+        left: -10%;
+        filter: blur(15px);
+        box-shadow: 
+            0 30px 0 rgba(225, 225, 230, 0.85),
+            0 60px 0 rgba(220, 220, 225, 0.8),
+            0 90px 0 rgba(215, 215, 220, 0.75);
+    }
+    
+    .clouds.thunderstorm {
+        background: none;
+    }
+    
+    .clouds.thunderstorm::before {
+        content: '';
+        position: absolute;
+        width: 120%;
+        height: 200px;
+        background: rgba(60, 60, 70, 0.95);
+        border-radius: 100px;
+        top: -50px;
+        left: -10%;
+        filter: blur(15px);
+        box-shadow: 
+            0 30px 0 rgba(55, 55, 65, 0.9),
+            0 60px 0 rgba(50, 50, 60, 0.85),
+            0 90px 0 rgba(45, 45, 55, 0.8);
+    }
+    
+    .clouds.sunset-lit::before {
+        background: rgba(255, 200, 170, 0.7);
+        box-shadow: 
+            0 30px 0 rgba(255, 180, 150, 0.65),
+            0 60px 0 rgba(255, 160, 130, 0.6),
+            0 90px 0 rgba(255, 140, 110, 0.55);
+    }
+    
+    .clouds.moonlit::before {
+        background: rgba(220, 220, 230, 0.4);
+        box-shadow: 
+            0 30px 0 rgba(210, 210, 220, 0.38),
+            0 60px 0 rgba(200, 200, 210, 0.36),
+            0 90px 0 rgba(190, 190, 200, 0.34);
+    }
+    
+    /* Rain */
+    .rain {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 4;
+        pointer-events: none;
+        transform: translateX(-50%);
+    }
+    
+    .rain.light::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(200, 200, 255, 0.2) 100%);
+        animation: vertical-rain 1.2s linear infinite;
+        background-size: 20px 100px;
+        background-repeat: repeat;
+    }
+    
+    .rain.medium::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(190, 190, 255, 0.25) 100%);
+        animation: vertical-rain 0.8s linear infinite;
+        background-size: 30px 80px;
+        background-repeat: repeat;
+    }
+    
+    .rain.heavy::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(180, 180, 255, 0.3) 100%);
+        animation: vertical-rain 0.6s linear infinite;
+        background-size: 40px 60px;
+        background-repeat: repeat;
+    }
+    
+    .drizzle::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+            transparent 0%,
+            rgba(200, 200, 255, 0.15) 100%);
+        animation: vertical-rain 1.5s linear infinite;
+        background-size: 15px 120px;
+        background-repeat: repeat;
+    }
+    
+    @keyframes vertical-rain {
+        0% {
+            background-position: 0px -100px;
+        }
+        100% {
+            background-position: 0px 0px;
+        }
+    }
+    
+    /* Snow */
+    .snow {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(2px 2px at 10% 10%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 20% 20%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 40% 40%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 50% 50%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 60% 60%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 70% 70%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 80% 80%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 90% 90%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+        animation: snow 10s linear infinite;
+        z-index: 4;
+    }
+    
+    .snow.light {
+        opacity: 0.7;
+        animation-duration: 12s;
+    }
+    
+    .snow.medium {
+        opacity: 0.8;
+        background-image: 
+            radial-gradient(2px 2px at 5% 5%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 15% 15%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 25% 25%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 35% 35%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 45% 45%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 55% 55%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 65% 65%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 75% 75%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 85% 85%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0)),
+            radial-gradient(2px 2px at 95% 95%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+        animation-duration: 10s;
+    }
+    
+    .snow.heavy {
+        opacity: 0.9;
+        background-image: 
+            radial-gradient(3px 3px at 5% 5%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 10% 10%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 15% 15%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 20% 20%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 25% 25%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 35% 35%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 40% 40%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 45% 45%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 50% 50%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 55% 55%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0)),
+            radial-gradient(3px 3px at 60% 60%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+        animation-duration: 8s;
+    }
+    
+    /* Fog */
+    .fog {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom,
+            rgba(220, 220, 220, 0.7) 0%,
+            rgba(220, 220, 220, 0.5) 50%,
+            rgba(220, 220, 220, 0) 100%);
+        animation: fog 10s ease-in-out infinite alternate;
+        z-index: 3;
+    }
+    
+    /* Lightning */
+    .lightning {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 5;
+    }
+    
+    .lightning::before {
+        content: '';
+        position: absolute;
+        width: 5px;
+        height: 200px;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+        transform: rotate(15deg);
+        top: 10%;
+        left: 40%;
+        filter: blur(1px);
+        opacity: 0;
+        animation: lightning 6s infinite;
+    }
+    
+    .lightning::after {
+        content: '';
+        position: absolute;
+        width: 3px;
+        height: 150px;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+        transform: rotate(-5deg);
+        top: 15%;
+        left: 55%;
+        filter: blur(1px);
+        opacity: 0;
+        animation: lightning 6s infinite 2s;
+    }
+    
+    /* Hail */
+    .hail {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(3px 3px at 10% 10%, rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0)),
+            radial-gradient(3px 3px at 30% 30%, rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0)),
+            radial-gradient(3px 3px at 50% 50%, rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0)),
+            radial-gradient(3px 3px at 70% 70%, rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0)),
+            radial-gradient(3px 3px at 90% 90%, rgba(220, 230, 240, 0.8), rgba(220, 230, 240, 0));
+        animation: hail 1s linear infinite;
+        z-index: 4;
+    }
+    
+    /* Animations */
+    @keyframes pulsate {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+    }
+    
+    @keyframes rain {
+        0% { background-position: 0 0; }
+        100% { background-position: 0 100px; }
+    }
+    
+    @keyframes snow {
+        0% { background-position: 0 0; opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { background-position: 500px 1000px, 400px 400px, 300px 300px; opacity: 0.7; }
+    }
+    
+    @keyframes fog {
+        0% { opacity: 0.5; }
+        100% { opacity: 0.8; }
+    }
+    
+    @keyframes lightning {
+        0% { opacity: 0; }
+        1% { opacity: 0; }
+        2% { opacity: 1; }
+        3% { opacity: 0; }
+        4% { opacity: 1; }
+        6% { opacity: 0; }
+        100% { opacity: 0; }
+    }
+    
+    @keyframes hail {
+        0% { background-position: 0 0; }
+        100% { background-position: 20px 200px; }
+    }
+    </style>
+</head>
+<body>
+    <div id="detailedWeather" class="detailed-weather"></div>
+  
+    <script>
+        function isDaytime() {
+            const hour = new Date().getHours();
+            return hour >= 6 && hour <= 18;
+        }
+        
+        const weatherConditions = {
+            0: { 
+                description: 'Clear Sky', 
+                icon: () => isDaytime() ? 'clear_day' : 'clear_night'
+            },
+            1: { 
+                description: 'Mainly Clear', 
+                icon: () => isDaytime() ? 'partly_cloudy_day' : 'partly_cloudy_night'
+            },
+            2: { 
+                description: 'Partly Cloudy', 
+                icon: () => isDaytime() ? 'partly_cloudy_day' : 'partly_cloudy_night'
+            },
+            3: { description: 'Overcast', icon: () => 'cloudy' },
+            45: { description: 'Fog', icon: () => 'foggy' },
+            48: { description: 'Depositing Rime Fog', icon: () => 'foggy' },
+            51: { 
+                description: 'Light Drizzle', 
+                icon: () => isDaytime() ? 'rainy_light' : 'rainy_light'
+            },
+            53: { 
+                description: 'Moderate Drizzle', 
+                icon: () => isDaytime() ? 'rainy' : 'rainy'
+            },
+            55: { 
+                description: 'Dense Drizzle', 
+                icon: () => isDaytime() ? 'rainy' : 'rainy'
+            },
+            56: { 
+                description: 'Light Freezing Drizzle', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            57: { 
+                description: 'Dense Freezing Drizzle', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            61: { 
+                description: 'Slight Rain', 
+                icon: () => isDaytime() ? 'rainy_light' : 'rainy_light'
+            },
+            63: { 
+                description: 'Moderate Rain', 
+                icon: () => isDaytime() ? 'rainy' : 'rainy'
+            },
+            65: { 
+                description: 'Heavy Rain', 
+                icon: () => isDaytime() ? 'rainy' : 'rainy'
+            },
+            66: { 
+                description: 'Light Freezing Rain', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            67: { 
+                description: 'Heavy Freezing Rain', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            71: { 
+                description: 'Slight Snow', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            73: { 
+                description: 'Moderate Snow', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            75: { 
+                description: 'Heavy Snow', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            77: { 
+                description: 'Snow Grains', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            }, 
+            80: { 
+                description: 'Slight Showers', 
+                icon: () => isDaytime() ? 'rainy_light' : 'rainy_light'
+            },
+            81: { 
+                description: 'Moderate Showers', 
+                icon: () => isDaytime() ? 'rainy' : 'rainy'
+            },
+            82: { 
+                description: 'Violent Showers', 
+                icon: () => isDaytime() ? 'thunderstorm' : 'thunderstorm'
+            },
+            85: { 
+                description: 'Slight Snow Showers', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            86: { 
+                description: 'Heavy Snow Showers', 
+                icon: () => isDaytime() ? 'cloudy_snowing' : 'cloudy_snowing'
+            },
+            95: { 
+                description: 'Thunderstorm', 
+                icon: () => isDaytime() ? 'thunderstorm' : 'thunderstorm'
+            },
+            96: { 
+                icon: () => isDaytime() ? 'thunderstorm' : 'thunderstorm'
+            },
+            99: { 
+                description: 'Heavy Thunderstorm with Hail', 
+                icon: () => isDaytime() ? 'thunderstorm' : 'thunderstorm'
+            }
+        };
+        
+        async function fetchLocationAndWeather() {
+            return new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const { latitude, longitude } = position.coords;
+                        const geocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+                        let city = 'Unknown Location';
+                        
+                        try {
+                            const geocodingResponse = await fetch(geocodingUrl);
+                            const geocodingData = await geocodingResponse.json();
+                            city = geocodingData.address.city ||
+                                geocodingData.address.town ||
+                                geocodingData.address.village ||
+                                'Unknown Location';
+                        } catch (geocodingError) {
+                            console.warn('Failed to retrieve your weather location', geocodingError);
+                        }
+        
+                        const currentWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
+                        const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,weathercode&timezone=Europe/London`;
+                        const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=Europe/London`;
+                        
+                        const [currentResponse, dailyResponse, hourlyResponse] = await Promise.all([
+                            fetch(currentWeatherUrl),
+                            fetch(dailyForecastUrl),
+                            fetch(hourlyForecastUrl)
+                        ]);
+        
+                        const currentWeatherData = await currentResponse.json();
+                        const dailyForecastData = await dailyResponse.json();
+                        const hourlyForecastData = await hourlyResponse.json();
+         
+                        resolve({
+                            city,
+                            current: currentWeatherData.current_weather,
+                            dailyForecast: dailyForecastData.daily,
+                            hourlyForecast: hourlyForecastData.hourly
+                        });
+        
+                        localStorage.setItem('lastWeatherData', JSON.stringify(weatherData));
+        
+                        resolve(weatherData);
+                        
+                    } catch (error) {
+                        console.error('Error fetching weather data:', error);
+                        if (!navigator.onLine) {
+                            showPopup(currentLanguage.OFFLINE);
+                        }
+                        // Return cached data if available
+                        const cachedData = localStorage.getItem('lastWeatherData');
+                        if (cachedData) {
+                            resolve(JSON.parse(cachedData));
+                            return;
+                        }
+                        reject(error);
+                    }
+                }, (error) => {
+                    console.error('Geolocation error:', error);
+                    reject(error);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 0
+                });
+            });
+        }
+        
+        function getDayOfWeek(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { weekday: 'long' });
+        }
+        
+        function getHourString(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        async function displayDetailedWeather() {
+            const weatherData = await fetchLocationAndWeather();
+            if (!weatherData) {
+                document.getElementById('detailedWeather').innerHTML = 'Failed to load weather';
+                return;
+            }
+        
+            const { city, current, dailyForecast, hourlyForecast } = weatherData;
+            const currentWeather = weatherConditions[current.weathercode] || { description: 'Unknown', icon: () => '❓' };
+        
+            const currentTime = new Date();
+            const nextDayMidnight = new Date(currentTime);
+            nextDayMidnight.setHours(24, 0, 0, 0);
+        
+            const validHourlyForecast = hourlyForecast.time
+                .map((time, index) => {
+                    const forecastTime = new Date(time);
+                    if (forecastTime > currentTime && forecastTime < nextDayMidnight) {
+                        return {
+                            time: time,
+                            temperature: hourlyForecast.temperature_2m[index],
+                            weatherCode: hourlyForecast.weathercode[index]
+                        };
+                    }
+                    return null;
+                })
+                .filter(Boolean);
+        
+            const hour = new Date().getHours();
+            const isDaytime = hour >= 6 && hour <= 18;
+            
+            // Time-specific periods for more realism
+            const isMorning = hour >= 6 && hour < 10;
+            const isEvening = hour >= 16 && hour < 20;
+            const isNight = hour < 6 || hour >= 20;
+            const isMidday = hour >= 10 && hour < 16;
+        
+            // Set gradient colors based on weather code and time of day
+            let gradientColors = '';
+            let pseudoGradientColors = ''; // Gradient for pseudo-element
+            
+            // Weather elements HTML
+            let weatherElements = '';
+        
+            if (isDaytime) {
+                if (isMorning) {
+                    // Morning gradients - sunrise colors
+                    switch (current.weathercode) {
+                        case 0: // Clear Sky - Sunrise
+                            gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 128, 0), rgb(255, 215, 0))';
+                            weatherElements += `
+                                <div class="sun morning"></div>
+                                <div class="sunrays morning"></div>
+                            `;
+                            break;
+                        case 1: // Mainly Clear - Soft morning blue with hints of gold
+                            gradientColors = 'linear-gradient(rgb(100, 181, 246), rgb(255, 213, 167))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 160, 0), rgb(255, 235, 59))';
+                            weatherElements += `
+                                <div class="sun morning"></div>
+                                <div class="sunrays morning faded"></div>
+                                <div class="clouds few morning"></div>
+                            `;
+                            break;
+                        case 2: // Partly Cloudy - Muted sunrise
+                            gradientColors = 'linear-gradient(rgb(129, 195, 236), rgb(219, 217, 198))';
+                            pseudoGradientColors = 'linear-gradient(rgb(244, 177, 131), rgb(255, 241, 193))';
+                            weatherElements += `
+                                <div class="sun morning behind-clouds"></div>
+                                <div class="clouds scattered morning"></div>
+                            `;
+                            break;
+                        case 3: // Overcast - Gray morning light
+                            gradientColors = 'linear-gradient(rgb(176, 190, 197), rgb(207, 216, 220))';
+                            pseudoGradientColors = 'linear-gradient(rgb(158, 158, 158), rgb(189, 189, 189))';
+                            weatherElements += `
+                                <div class="clouds overcast morning"></div>
+                            `;
+                            break;
+                        case 45: case 48: // Fog - Misty morning
+                            gradientColors = 'linear-gradient(rgb(207, 216, 220), rgb(236, 239, 241))';
+                            pseudoGradientColors = 'linear-gradient(rgb(189, 189, 189), rgb(224, 224, 224))';
+                            weatherElements += `
+                                <div class="fog morning"></div>
+                            `;
+                            break;
+                        case 51: case 53: case 55: // Light Drizzle - Gentle morning rain
+                            gradientColors = 'linear-gradient(rgb(129, 178, 214), rgb(188, 197, 204))';
+                            pseudoGradientColors = 'linear-gradient(rgb(100, 143, 189), rgb(149, 179, 205))';
+                            weatherElements += `
+                                <div class="clouds broken morning"></div>
+                                <div class="drizzle morning"></div>
+                            `;
+                            break;
+                        case 61: case 63: case 65: // Rain - Morning downpour
+                        case 66: case 67: // Freezing Rain
+                        case 80: case 81: case 82: // Showers
+                            gradientColors = 'linear-gradient(rgb(96, 146, 178), rgb(161, 183, 195))';
+                            pseudoGradientColors = 'linear-gradient(rgb(69, 93, 122), rgb(110, 148, 176))';
+                            weatherElements += `
+                                <div class="clouds dark morning"></div>
+                                <div class="rain morning ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 71: case 73: case 75: // Snow - Gentle morning snowfall
+                        case 77: // Snow Grains
+                        case 85: case 86: // Snow Showers
+                            gradientColors = 'linear-gradient(rgb(209, 217, 226), rgb(235, 239, 243))';
+                            pseudoGradientColors = 'linear-gradient(rgb(189, 200, 214), rgb(212, 221, 232))';
+                            weatherElements += `
+                                <div class="clouds light morning"></div>
+                                <div class="snow morning ${current.weathercode >= 85 ? 'heavy' : (current.weathercode >= 73 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 95: // Thunderstorm - Stormy sunrise
+                        case 96: case 99: // Thunderstorm with Hail
+                            gradientColors = 'linear-gradient(rgb(67, 90, 120), rgb(108, 128, 147))';
+                            pseudoGradientColors = 'linear-gradient(rgb(45, 52, 75), rgb(79, 93, 108))';
+                            weatherElements += `
+                                <div class="clouds thunderstorm morning"></div>
+                                <div class="rain heavy morning"></div>
+                                <div class="lightning morning"></div>
+                                ${current.weathercode >= 96 ? '<div class="hail morning"></div>' : ''}
+                            `;
+                            break;
+                        default:
+                            gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 128, 0), rgb(255, 215, 0))';
+                            weatherElements += `
+                                <div class="sun morning"></div>
+                                <div class="sunrays morning"></div>
+                            `;
+                            break;
+                    }
+                } else if (isMidday) {
+                    // Midday gradients - bright, vibrant skies
+                    switch (current.weathercode) {
+                        case 0: // Clear Sky - Bright blue
+                            gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 236, 179), rgb(255, 255, 240))';
+                            weatherElements += `
+                                <div class="sun midday"></div>
+                                <div class="sunrays midday"></div>
+                            `;
+                            break;
+                        case 1: // Mainly Clear - Brilliant blue with slight haze
+                            gradientColors = 'linear-gradient(rgb(30, 144, 255), rgb(135, 206, 250))';
+                            pseudoGradientColors = 'linear-gradient(rgb(248, 245, 224), rgb(240, 248, 255))';
+                            weatherElements += `
+                                <div class="sun midday"></div>
+                                <div class="sunrays midday faded"></div>
+                                <div class="clouds few midday"></div>
+                            `;
+                            break;
+                        case 2: // Partly Cloudy - Blue with white cloud wisps
+                            gradientColors = 'linear-gradient(rgb(64, 156, 255), rgb(190, 222, 245))';
+                            pseudoGradientColors = 'linear-gradient(rgb(240, 240, 240), rgb(255, 255, 255))';
+                            weatherElements += `
+                                <div class="sun midday behind-clouds"></div>
+                                <div class="clouds scattered midday"></div>
+                            `;
+                            break;
+                        case 3: // Overcast - Light gray sky
+                            gradientColors = 'linear-gradient(rgb(137, 152, 170), rgb(189, 198, 207))';
+                            pseudoGradientColors = 'linear-gradient(rgb(176, 190, 197), rgb(207, 216, 220))';
+                            weatherElements += `
+                                <div class="clouds overcast midday"></div>
+                            `;
+                            break;
+                        case 45: case 48: // Fog - White haze
+                            gradientColors = 'linear-gradient(rgb(180, 187, 194), rgb(220, 227, 232))';
+                            pseudoGradientColors = 'linear-gradient(rgb(212, 222, 231), rgb(235, 239, 243))';
+                            weatherElements += `
+                                <div class="fog midday"></div>
+                            `;
+                            break;
+                        case 51: case 53: case 55: // Light Drizzle - Light rain blue
+                            gradientColors = 'linear-gradient(rgb(86, 156, 214), rgb(157, 192, 219))';
+                            pseudoGradientColors = 'linear-gradient(rgb(188, 222, 242), rgb(214, 230, 242))';
+                            weatherElements += `
+                                <div class="clouds broken midday"></div>
+                                <div class="drizzle midday"></div>
+                            `;
+                            break;
+                        case 61: case 63: case 65: // Rain - Deeper rain blue
+                        case 66: case 67: // Freezing Rain
+                        case 80: case 81: case 82: // Showers
+                            gradientColors = 'linear-gradient(rgb(62, 146, 204), rgb(124, 169, 207))';
+                            pseudoGradientColors = 'linear-gradient(rgb(125, 166, 204), rgb(174, 198, 219))';
+                            weatherElements += `
+                                <div class="clouds dark midday"></div>
+                                <div class="rain midday ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 71: case 73: case 75: // Snow - Bright white-blue
+                        case 77: // Snow Grains
+                        case 85: case 86: // Snow Showers
+                            gradientColors = 'linear-gradient(rgb(185, 219, 237), rgb(225, 240, 247))';
+                            pseudoGradientColors = 'linear-gradient(rgb(230, 240, 245), rgb(245, 252, 255))';
+                            weatherElements += `
+                                <div class="clouds light midday"></div>
+                                <div class="snow midday ${current.weathercode >= 85 ? 'heavy' : (current.weathercode >= 73 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 95: // Thunderstorm - Dark storm blue
+                        case 96: case 99: // Thunderstorm with Hail
+                            gradientColors = 'linear-gradient(rgb(47, 79, 103), rgb(86, 105, 124))';
+                            pseudoGradientColors = 'linear-gradient(rgb(37, 50, 65), rgb(58, 76, 94))';
+                            weatherElements += `
+                                <div class="clouds thunderstorm midday"></div>
+                                <div class="rain heavy midday"></div>
+                                <div class="lightning midday"></div>
+                                ${current.weathercode >= 96 ? '<div class="hail midday"></div>' : ''}
+                            `;
+                            break;
+                        default:
+                            gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 236, 179), rgb(255, 255, 240))';
+                            weatherElements += `
+                                <div class="sun midday"></div>
+                                <div class="sunrays midday"></div>
+                            `;
+                            break;
+                    }
+                } else if (isEvening) {
+                    // Evening gradients - sunset colors
+                    switch (current.weathercode) {
+                        case 0: // Clear Sky - Sunset glow
+                            gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 69, 0), rgb(255, 215, 0))';
+                            weatherElements += `
+                                <div class="sun evening"></div>
+                                <div class="sunrays evening"></div>
+                            `;
+                            break;
+                        case 1: // Mainly Clear - Soft sunset
+                            gradientColors = 'linear-gradient(rgb(70, 130, 180), rgb(255, 160, 122))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 99, 71), rgb(255, 222, 173))';
+                            weatherElements += `
+                                <div class="sun evening"></div>
+                                <div class="sunrays evening faded"></div>
+                                <div class="clouds few evening"></div>
+                            `;
+                            break;
+                        case 2: // Partly Cloudy - Muted sunset
+                            gradientColors = 'linear-gradient(rgb(100, 149, 237), rgb(240, 128, 128))';
+                            pseudoGradientColors = 'linear-gradient(rgb(233, 150, 122), rgb(255, 239, 213))';
+                            weatherElements += `
+                                <div class="sun evening behind-clouds"></div>
+                                <div class="clouds scattered evening sunset-lit"></div>
+                            `;
+                            break;
+                        case 3: // Overcast - Dulled evening light
+                            gradientColors = 'linear-gradient(rgb(95, 106, 129), rgb(155, 159, 172))';
+                            pseudoGradientColors = 'linear-gradient(rgb(119, 136, 153), rgb(176, 176, 176))';
+                            weatherElements += `
+                                <div class="clouds overcast evening"></div>
+                            `;
+                            break;
+                        case 45: case 48: // Fog - Evening mist
+                            gradientColors = 'linear-gradient(rgb(143, 155, 179), rgb(190, 195, 209))';
+                            pseudoGradientColors = 'linear-gradient(rgb(169, 181, 204), rgb(211, 213, 222))';
+                            weatherElements += `
+                                <div class="fog evening"></div>
+                            `;
+                            break;
+                        case 51: case 53: case 55: // Light Drizzle - Evening shower
+                            gradientColors = 'linear-gradient(rgb(74, 112, 139), rgb(153, 169, 188))';
+                            pseudoGradientColors = 'linear-gradient(rgb(84, 120, 169), rgb(169, 188, 208))';
+                            weatherElements += `
+                                <div class="clouds broken evening"></div>
+                                <div class="drizzle evening"></div>
+                            `;
+                            break;
+                        case 61: case 63: case 65: // Rain - Evening downpour
+                        case 66: case 67: // Freezing Rain
+                        case 80: case 81: case 82: // Showers
+                            gradientColors = 'linear-gradient(rgb(54, 92, 125), rgb(121, 143, 161))';
+                            pseudoGradientColors = 'linear-gradient(rgb(40, 65, 85), rgb(90, 115, 135))';
+                            weatherElements += `
+                                <div class="clouds dark evening"></div>
+                                <div class="rain evening ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 71: case 73: case 75: // Snow - Evening snowfall
+                        case 77: // Snow Grains
+                        case 85: case 86: // Snow Showers
+                            gradientColors = 'linear-gradient(rgb(160, 175, 200), rgb(210, 215, 228))';
+                            pseudoGradientColors = 'linear-gradient(rgb(180, 195, 218), rgb(225, 230, 240))';
+                            weatherElements += `
+                                <div class="clouds light evening"></div>
+                                <div class="snow evening ${current.weathercode >= 85 ? 'heavy' : (current.weathercode >= 73 ? 'medium' : 'light')}"></div>
+                            `;
+                            break;
+                        case 95: // Thunderstorm - Evening storm
+                        case 96: case 99: // Thunderstorm with Hail
+                            gradientColors = 'linear-gradient(rgb(45, 62, 80), rgb(75, 92, 110))';
+                            pseudoGradientColors = 'linear-gradient(rgb(25, 35, 55), rgb(50, 65, 80))';
+                            weatherElements += `
+                                <div class="clouds thunderstorm evening"></div>
+                                <div class="rain heavy evening"></div>
+                                <div class="lightning evening"></div>
+                                ${current.weathercode >= 96 ? '<div class="hail evening"></div>' : ''}
+                            `;
+                            break;
+                        default:
+                            gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))';
+                            pseudoGradientColors = 'linear-gradient(rgb(255, 69, 0), rgb(255, 215, 0))';
+                            weatherElements += `
+                                <div class="sun evening"></div>
+                                <div class="sunrays evening"></div>
+                            `;
+                            break;
+                    }
+                }
+            } else {
+                // Night gradients - darker, deeper colors
+                switch (current.weathercode) {
+                    case 0: // Clear Night - Deep blue with stars
+                        gradientColors = 'linear-gradient(rgb(10, 15, 50), rgb(25, 25, 70))';
+                        pseudoGradientColors = 'linear-gradient(rgb(0, 0, 30), rgb(15, 15, 45))';
+                        weatherElements += `
+                            <div class="stars night"></div>
+                            <div class="moon night"></div>
+                        `;
+                        break;
+                    case 1: // Mainly Clear - Navy with soft light
+                        gradientColors = 'linear-gradient(rgb(15, 20, 55), rgb(30, 30, 75))';
+                        pseudoGradientColors = 'linear-gradient(rgb(5, 5, 35), rgb(20, 20, 50))';
+                        weatherElements += `
+                            <div class="stars night faded"></div>
+                            <div class="moon night"></div>
+                            <div class="clouds few night"></div>
+                        `;
+                        break;
+                    case 2: // Partly Cloudy - Dark blue with cloud shadows
+                        gradientColors = 'linear-gradient(rgb(20, 25, 60), rgb(35, 40, 80))';
+                        pseudoGradientColors = 'linear-gradient(rgb(10, 15, 40), rgb(25, 30, 65))';
+                        weatherElements += `
+                            <div class="stars night sparse"></div>
+                            <div class="moon night behind-clouds"></div>
+                            <div class="clouds scattered night moonlit"></div>
+                        `;
+                        break;
+                    case 3: // Overcast - Dark gray night sky
+                        gradientColors = 'linear-gradient(rgb(30, 35, 45), rgb(45, 50, 60))';
+                        pseudoGradientColors = 'linear-gradient(rgb(20, 25, 35), rgb(35, 40, 50))';
+                        weatherElements += `
+                            <div class="clouds overcast night"></div>
+                        `;
+                        break;
+                    case 45: case 48: // Fog - Misty night
+                        gradientColors = 'linear-gradient(rgb(40, 45, 55), rgb(60, 65, 75))';
+                        pseudoGradientColors = 'linear-gradient(rgb(30, 35, 45), rgb(50, 55, 65))';
+                        weatherElements += `
+                            <div class="fog night"></div>
+                        `;
+                        break;
+                    case 51: case 53: case 55: // Light Drizzle - Gentle night rain
+                        gradientColors = 'linear-gradient(rgb(25, 35, 50), rgb(40, 50, 65))';
+                        pseudoGradientColors = 'linear-gradient(rgb(15, 25, 40), rgb(30, 40, 55))';
+                        weatherElements += `
+                            <div class="clouds broken night"></div>
+                            <div class="drizzle night"></div>
+                        `;
+                        break;
+                    case 61: case 63: case 65: // Rain - Night downpour
+                    case 66: case 67: // Freezing Rain
+                    case 80: case 81: case 82: // Showers
+                        gradientColors = 'linear-gradient(rgb(20, 30, 45), rgb(35, 45, 60))';
+                        pseudoGradientColors = 'linear-gradient(rgb(10, 20, 35), rgb(25, 35, 50))';
+                        weatherElements += `
+                            <div class="clouds dark night"></div>
+                            <div class="rain night ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                        `;
+                        break;
+                    case 71: case 73: case 75: // Snow - Night snowfall
+                    case 77: // Snow Grains
+                    case 85: case 86: // Snow Showers
+                        gradientColors = 'linear-gradient(rgb(35, 40, 55), rgb(55, 60, 75))';
+                        pseudoGradientColors = 'linear-gradient(rgb(25, 30, 45), rgb(45, 50, 65))';
+                        weatherElements += `
+                            <div class="clouds light night"></div>
+                            <div class="snow night ${current.weathercode >= 85 ? 'heavy' : (current.weathercode >= 73 ? 'medium' : 'light')}"></div>
+                        `;
+                        break;
+                    case 95: // Thunderstorm - Night storm
+                    case 96: case 99: // Thunderstorm with Hail
+                        gradientColors = 'linear-gradient(rgb(15, 20, 35), rgb(25, 30, 45))';
+                        pseudoGradientColors = 'linear-gradient(rgb(5, 10, 25), rgb(15, 20, 35))';
+                        weatherElements += `
+                            <div class="clouds thunderstorm night"></div>
+                            <div class="rain heavy night"></div>
+                            <div class="lightning night"></div>
+                            ${current.weathercode >= 96 ? '<div class="hail night"></div>' : ''}
+                        `;
+                        break;
+                    default:
+                        gradientColors = 'linear-gradient(rgb(10, 15, 50), rgb(25, 25, 70))';
+                        pseudoGradientColors = 'linear-gradient(rgb(0, 0, 30), rgb(15, 15, 45))';
+                        weatherElements += `
+                            <div class="stars night"></div>
+                            <div class="moon night"></div>
+                        `;
+                        break;
+                }
+            }
+        
+            const detailedWeatherElement = document.getElementById('detailedWeather');
+            
+            // Get the current background for transition
+            const currentBackgroundGradient = window.getComputedStyle(detailedWeatherElement).background;
+            
+            // Add the class first before transitioning
+            detailedWeatherElement.className = 'detailed-weather';
+            
+            // Transition the gradient using our JS animation
+            transitionGradient(detailedWeatherElement, currentBackgroundGradient, gradientColors, 500);
+            
+            // Add pseudo-element gradient through CSS variable
+            detailedWeatherElement.style.setProperty('--pseudo-gradient', pseudoGradientColors);
+        
+            // Adding the weather content
+            document.getElementById('detailedWeather').innerHTML = `
+                <div class="weather-elements-container">
+                    ${weatherElements}
+                </div>
+                <p class="location-text">${city}</p>
+                <span class="weather-icon material-symbols-rounded">${currentWeather.icon(isDaytime)}</span>
+                <h2>${current.temperature}°</h2>
+                
+                <p>${currentWeather.description}</p>
+                <p class="additional-info">${current.windspeed} km/h</p>
+                <div class="hourly-forecast">
+                    ${validHourlyForecast.map((hour, index) => {
+                        const hourClass = index === 0 ? 'hour first' :
+                            index === validHourlyForecast.length - 1 ? 'hour last' : 'hour';
+                        const hourString = getHourString(hour.time);
+                        const hourWeather = weatherConditions[hour.weatherCode] || { description: 'Unknown', icon: () => '❓' };
+        
+                        return `
+                            <div class="${hourClass}">
+                                <span>${hourString}</span>
+                                <span>${hour.temperature}°</span>
+                                <span class="material-symbols-rounded">${hourWeather.icon(isDaytimeForHour(hour.time))}</span>
+                                <span>${hourWeather.description}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="forecast-container">
+                    ${dailyForecast.time.slice(1, 6).map((date, index) => {
+                        const dayName = getDayOfWeek(date);
+                        const weatherCode = dailyForecast.weathercode[index + 1];
+                        const maxTemp = dailyForecast.temperature_2m_max[index + 1];
+                        const forecastWeather = weatherConditions[weatherCode] || { description: 'Unknown', icon: () => '❓' };
+        
+                        return `
+                            <div class="forecast-day">
+                                <p class="day-name">${dayName}</p>
+                                <p class="forecast-icon material-symbols-rounded">${forecastWeather.icon(true)}</p>
+                                <p>${maxTemp}°</p>
+                                <p>${forecastWeather.description}</p>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        // Helper functions for gradient transitions remain the same
+        function transitionGradient(element, startGradient, endGradient, duration = 500) {
+            // Parse gradient strings to extract colors
+            const startColors = startGradient.match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/g) || 
+                                ['rgb(0, 0, 0)', 'rgb(0, 0, 0)']; // Fallback if no match
+            const endColors = endGradient.match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/g) || 
+                              ['rgb(0, 0, 0)', 'rgb(0, 0, 0)']; // Fallback if no match
+            
+            // Ensure we have at least two colors to work with
+            if (startColors.length < 2) startColors.push(startColors[0]);
+            if (endColors.length < 2) endColors.push(endColors[0]);
+            
+            const frameCount = duration / 16.667; // ~60fps
+            let frame = 0;
+            
+            const interval = setInterval(() => {
+                if (frame >= frameCount) {
+                    clearInterval(interval);
+                    element.style.background = endGradient;
+                    return;
+                }
+                
+                const progress = frame / frameCount;
+                
+                // Interpolate the first color
+                const startColor1 = parseRGB(startColors[0]);
+                const endColor1 = parseRGB(endColors[0]);
+                const currentColor1 = interpolateColor(startColor1, endColor1, progress);
+                
+                // Interpolate the second color
+                const startColor2 = parseRGB(startColors[startColors.length - 1]);
+                const endColor2 = parseRGB(endColors[endColors.length - 1]);
+                const currentColor2 = interpolateColor(startColor2, endColor2, progress);
+                
+                // Construct the new gradient
+                const currentGradient = `linear-gradient(${currentColor1}, ${currentColor2})`;
+                
+                // Apply it
+                element.style.background = currentGradient;
+                frame++;
+            }, 16.667);
+        }
+        
+        function parseRGB(rgbString) {
+            const values = rgbString.match(/\d+/g);
+            if (!values || values.length < 3) {
+                return { r: 0, g: 0, b: 0 }; // Default to black if parsing fails
+            }
+            return {
+                r: parseInt(values[0]),
+                g: parseInt(values[1]),
+                b: parseInt(values[2])
+            };
+        }
+        
+        function interpolateColor(color1, color2, progress) {
+            const r = Math.round(color1.r + (color2.r - color1.r) * progress);
+            const g = Math.round(color1.g + (color2.g - color1.g) * progress);
+            const b = Math.round(color1.b + (color2.b - color1.b) * progress);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        // Helper function to determine if a specific hour is daytime
+        function isDaytimeForHour(timeString) {
+            const hour = new Date(timeString).getHours();
+            return hour >= 6 && hour <= 18;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {            
+            displayDetailedWeather();
+        });
+    </script>
+</body>
+</html>

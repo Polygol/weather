@@ -595,75 +595,172 @@
             0 90px 0 rgba(190, 190, 200, 0.34);
     }
     
-    /* Rain */
-    .rain {
+    /* Individual Raindrop */
+    .raindrop {
         position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: 4;
-        pointer-events: none;
-        transform: translateX(-50%);
+        width: 2px;
+        background: linear-gradient(to bottom, 
+            rgba(200, 200, 255, 0.8) 0%,
+            rgba(200, 200, 255, 0.4) 50%,
+            transparent 100%);
+        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        animation: fall linear infinite;
     }
     
-    .rain.light::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom,
-            transparent 0%,
-            rgba(200, 200, 255, 0.2) 100%);
-        animation: vertical-rain 1.2s linear infinite;
-        background-size: 20px 100px;
-        background-repeat: repeat;
+    /* Different intensities */
+    .rain.light .raindrop {
+        height: 15px;
+        animation-duration: 1.2s;
     }
     
-    .rain.medium::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom,
-            transparent 0%,
-            rgba(190, 190, 255, 0.25) 100%);
-        animation: vertical-rain 0.8s linear infinite;
-        background-size: 30px 80px;
-        background-repeat: repeat;
+    .rain.medium .raindrop {
+        height: 20px;
+        width: 2.5px;
+        animation-duration: 0.8s;
+        background: linear-gradient(to bottom, 
+            rgba(190, 190, 255, 0.9) 0%,
+            rgba(190, 190, 255, 0.5) 50%,
+            transparent 100%);
     }
     
-    .rain.heavy::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom,
-            transparent 0%,
-            rgba(180, 180, 255, 0.3) 100%);
-        animation: vertical-rain 0.6s linear infinite;
-        background-size: 40px 60px;
-        background-repeat: repeat;
+    .rain.heavy .raindrop {
+        height: 25px;
+        width: 3px;
+        animation-duration: 0.6s;
+        background: linear-gradient(to bottom, 
+            rgba(180, 180, 255, 1) 0%,
+            rgba(180, 180, 255, 0.7) 50%,
+            transparent 100%);
     }
     
-    .drizzle::before {
-        content: '';
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(to bottom,
-            transparent 0%,
-            rgba(200, 200, 255, 0.15) 100%);
-        animation: vertical-rain 1.5s linear infinite;
-        background-size: 15px 120px;
-        background-repeat: repeat;
+    .drizzle .raindrop {
+        height: 8px;
+        width: 1px;
+        animation-duration: 1.8s;
+        background: linear-gradient(to bottom, 
+            rgba(200, 200, 255, 0.5) 0%,
+            rgba(200, 200, 255, 0.2) 50%,
+            transparent 100%);
     }
     
-    @keyframes vertical-rain {
+    /* Falling Animation */
+    @keyframes fall {
         0% {
-            background-position: 0px -100px;
+            transform: translateY(-100vh) rotate(0deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        90% {
+            opacity: 1;
         }
         100% {
-            background-position: 0px 0px;
+            transform: translateY(100vh) rotate(2deg);
+            opacity: 0;
         }
+    }
+    
+    /* Variations for different drop types */
+    .raindrop:nth-child(odd) {
+        animation-duration: calc(var(--base-duration, 1s) * 1.2);
+    }
+    
+    .raindrop:nth-child(even) {
+        animation-duration: calc(var(--base-duration, 1s) * 0.9);
+    }
+    
+    .raindrop:nth-child(3n) {
+        animation-duration: calc(var(--base-duration, 1s) * 1.1);
+    }
+
+        /* Wind effect animations */
+    .rain.windy .raindrop {
+        animation-name: fall-windy;
+    }
+    
+    .rain.very-windy .raindrop {
+        animation-name: fall-very-windy;
+    }
+    
+    .drizzle.windy .raindrop {
+        animation-name: fall-windy-light;
+    }
+    
+    @keyframes fall-windy {
+        0% {
+            transform: translateY(-100vh) translateX(-10px) rotate(-8deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(-50vh) translateX(15px) rotate(-5deg);
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh) translateX(30px) rotate(-2deg);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes fall-very-windy {
+        0% {
+            transform: translateY(-100vh) translateX(-20px) rotate(-15deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        30% {
+            transform: translateY(-70vh) translateX(10px) rotate(-12deg);
+        }
+        70% {
+            transform: translateY(-30vh) translateX(40px) rotate(-8deg);
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh) translateX(60px) rotate(-3deg);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes fall-windy-light {
+        0% {
+            transform: translateY(-100vh) translateX(-5px) rotate(-5deg);
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        50% {
+            transform: translateY(-50vh) translateX(8px) rotate(-3deg);
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh) translateX(15px) rotate(-1deg);
+            opacity: 0;
+        }
+    }
+    
+    /* Add some variation to individual raindrops in wind */
+    .rain.windy .raindrop:nth-child(odd) {
+        animation-duration: calc(var(--base-duration, 1s) * 0.8);
+    }
+    
+    .rain.windy .raindrop:nth-child(even) {
+        animation-duration: calc(var(--base-duration, 1s) * 1.2);
+    }
+    
+    .rain.very-windy .raindrop:nth-child(3n) {
+        animation-duration: calc(var(--base-duration, 1s) * 0.7);
     }
     
     /* Snow */
@@ -1023,6 +1120,68 @@
             const date = new Date(dateString);
             return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         }
+
+        // Function to determine wind class based on wind speed
+        function getWindClass(windSpeed) {
+            if (windSpeed >= 25) return 'very-windy';
+            if (windSpeed >= 15) return 'windy';
+            return '';
+        }
+        
+        function createRaindrops(container, intensity = 'medium') {
+            // Remove existing raindrops
+            const existingDrops = container.querySelectorAll('.raindrop');
+            existingDrops.forEach(drop => drop.remove());
+            
+            // Determine if this is a windy condition
+            const isWindy = container.classList.contains('windy');
+            const isVeryWindy = container.classList.contains('very-windy');
+            
+            // Set number of raindrops based on intensity
+            const dropCounts = {
+                'drizzle': 25,
+                'light': 50,
+                'medium': 100,
+                'heavy': 180
+            };
+            
+            const dropCount = dropCounts[intensity] || 100;
+            
+            // Set CSS variable for base duration
+            const baseDurations = {
+                'drizzle': '1.8s',
+                'light': '1.2s',  
+                'medium': '0.8s',
+                'heavy': '0.6s'
+            };
+            
+            container.style.setProperty('--base-duration', baseDurations[intensity]);
+            
+            for (let i = 0; i < dropCount; i++) {
+                const raindrop = document.createElement('div');
+                raindrop.className = 'raindrop';
+                
+                // Random horizontal position
+                raindrop.style.left = Math.random() * 100 + '%';
+                
+                // Random animation delay for natural staggering
+                raindrop.style.animationDelay = Math.random() * 2 + 's';
+                
+                // Add extra variation for windy conditions
+                if (isWindy || isVeryWindy) {
+                    // Slight variation in duration for more chaotic wind effect
+                    const baseDuration = parseFloat(baseDurations[intensity]);
+                    const variation = (Math.random() - 0.5) * 0.4; // ±0.2s variation
+                    raindrop.style.animationDuration = (baseDuration + variation) + 's';
+                    
+                    // Add some horizontal offset variation for wind scatter
+                    const horizontalOffset = (Math.random() - 0.5) * 10; // ±5% horizontal variation
+                    raindrop.style.left = (Math.random() * 100 + horizontalOffset) + '%';
+                }
+                
+                container.appendChild(raindrop);
+            }
+        }
         
         async function displayDetailedWeather() {
             const weatherData = await fetchLocationAndWeather();
@@ -1124,9 +1283,10 @@
                         case 80: case 81: case 82: // Showers
                             gradientColors = 'linear-gradient(rgb(96, 146, 178), rgb(161, 183, 195))';
                             pseudoGradientColors = 'linear-gradient(rgb(69, 93, 122), rgb(110, 148, 176))';
+                            const windClass = getWindClass(current.windspeed);
                             weatherElements += `
-                                <div class="clouds dark morning"></div>
-                                <div class="rain morning ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                                <div class="clouds broken ${timeOfDay}"></div>
+                                <div class="drizzle ${timeOfDay} ${windClass}"></div>
                             `;
                             break;
                         case 71: case 73: case 75: // Snow - Gentle morning snowfall
@@ -1214,9 +1374,11 @@
                         case 80: case 81: case 82: // Showers
                             gradientColors = 'linear-gradient(rgb(62, 146, 204), rgb(124, 169, 207))';
                             pseudoGradientColors = 'linear-gradient(rgb(125, 166, 204), rgb(174, 198, 219))';
+                            const windClass = getWindClass(current.windspeed);
+                            const rainIntensity = current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light');
                             weatherElements += `
-                                <div class="clouds dark midday"></div>
-                                <div class="rain midday ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                                <div class="clouds dark ${timeOfDay}"></div>
+                                <div class="rain ${timeOfDay} ${rainIntensity} ${windClass}"></div>
                             `;
                             break;
                         case 71: case 73: case 75: // Snow - Bright white-blue
@@ -1233,11 +1395,12 @@
                         case 96: case 99: // Thunderstorm with Hail
                             gradientColors = 'linear-gradient(rgb(47, 79, 103), rgb(86, 105, 124))';
                             pseudoGradientColors = 'linear-gradient(rgb(37, 50, 65), rgb(58, 76, 94))';
+                            const windClass = getWindClass(current.windspeed);
                             weatherElements += `
-                                <div class="clouds thunderstorm midday"></div>
-                                <div class="rain heavy midday"></div>
-                                <div class="lightning midday"></div>
-                                ${current.weathercode >= 96 ? '<div class="hail midday"></div>' : ''}
+                                <div class="clouds thunderstorm ${timeOfDay}"></div>
+                                <div class="rain heavy ${timeOfDay} ${windClass}"></div>
+                                <div class="lightning ${timeOfDay}"></div>
+                                ${current.weathercode >= 96 ? '<div class="hail ${timeOfDay}"></div>' : ''}
                             `;
                             break;
                         default:
@@ -1431,6 +1594,30 @@
                         `;
                         break;
                 }
+
+                setTimeout(() => {
+                    // Handle drizzle elements
+                    const drizzleElements = document.querySelectorAll('.drizzle');
+                    drizzleElements.forEach(drizzleElement => {
+                        createRaindrops(drizzleElement, 'drizzle');
+                    });
+                    
+                    // Handle rain elements with different intensities
+                    const rainElements = document.querySelectorAll('.rain');
+                    rainElements.forEach(rainElement => {
+                        let intensity = 'medium'; // default
+                        
+                        if (rainElement.classList.contains('light')) {
+                            intensity = 'light';
+                        } else if (rainElement.classList.contains('medium')) {
+                            intensity = 'medium';
+                        } else if (rainElement.classList.contains('heavy')) {
+                            intensity = 'heavy';
+                        }
+                        
+                        createRaindrops(rainElement, intensity);
+                    });
+                }, 100);
             }
         
             const detailedWeatherElement = document.getElementById('detailedWeather');

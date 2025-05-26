@@ -1279,7 +1279,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(100, 143, 189), rgb(149, 179, 205))';
                             weatherElements += `
                                 <div class="clouds broken morning"></div>
-                                <div class="drizzle morning"></div>
+                                <div class="drizzle morning ${windClass}"></div>
                             `;
                             break;
                         case 61: case 63: case 65: // Rain - Morning downpour
@@ -1288,8 +1288,8 @@
                             gradientColors = 'linear-gradient(rgb(96, 146, 178), rgb(161, 183, 195))';
                             pseudoGradientColors = 'linear-gradient(rgb(69, 93, 122), rgb(110, 148, 176))';
                             weatherElements += `
-                                <div class="clouds broken ${timeOfDay}"></div>
-                                <div class="drizzle ${timeOfDay} ${windClass}"></div>
+                                <div class="clouds dark morning"></div>
+                                <div class="rain morning ${rainIntensity} ${windClass}"></div>
                             `;
                             break;
                         case 71: case 73: case 75: // Snow - Gentle morning snowfall
@@ -1308,7 +1308,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(45, 52, 75), rgb(79, 93, 108))';
                             weatherElements += `
                                 <div class="clouds thunderstorm morning"></div>
-                                <div class="rain heavy morning"></div>
+                                <div class="rain heavy morning ${windClass}"></div>
                                 <div class="lightning morning"></div>
                                 ${current.weathercode >= 96 ? '<div class="hail morning"></div>' : ''}
                             `;
@@ -1369,7 +1369,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(188, 222, 242), rgb(214, 230, 242))';
                             weatherElements += `
                                 <div class="clouds broken midday"></div>
-                                <div class="drizzle midday"></div>
+                                <div class="drizzle midday ${windClass}"></div>
                             `;
                             break;
                         case 61: case 63: case 65: // Rain - Deeper rain blue
@@ -1378,8 +1378,8 @@
                             gradientColors = 'linear-gradient(rgb(62, 146, 204), rgb(124, 169, 207))';
                             pseudoGradientColors = 'linear-gradient(rgb(125, 166, 204), rgb(174, 198, 219))';
                             weatherElements += `
-                                <div class="clouds dark ${timeOfDay}"></div>
-                                <div class="rain ${timeOfDay} ${rainIntensity} ${windClass}"></div>
+                                <div class="clouds dark midday"></div>
+                                <div class="rain midday ${rainIntensity} ${windClass}"></div>
                             `;
                             break;
                         case 71: case 73: case 75: // Snow - Bright white-blue
@@ -1397,10 +1397,10 @@
                             gradientColors = 'linear-gradient(rgb(47, 79, 103), rgb(86, 105, 124))';
                             pseudoGradientColors = 'linear-gradient(rgb(37, 50, 65), rgb(58, 76, 94))';
                             weatherElements += `
-                                <div class="clouds thunderstorm ${timeOfDay}"></div>
-                                <div class="rain heavy ${timeOfDay} ${windClass}"></div>
-                                <div class="lightning ${timeOfDay}"></div>
-                                ${current.weathercode >= 96 ? '<div class="hail ${timeOfDay}"></div>' : ''}
+                                <div class="clouds thunderstorm midday"></div>
+                                <div class="rain heavy midday ${windClass}"></div>
+                                <div class="lightning midday"></div>
+                                ${current.weathercode >= 96 ? '<div class="hail midday"></div>' : ''}
                             `;
                             break;
                         default:
@@ -1459,7 +1459,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(84, 120, 169), rgb(169, 188, 208))';
                             weatherElements += `
                                 <div class="clouds broken evening"></div>
-                                <div class="drizzle evening"></div>
+                                <div class="drizzle evening ${windClass}"></div>
                             `;
                             break;
                         case 61: case 63: case 65: // Rain - Evening downpour
@@ -1469,7 +1469,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(40, 65, 85), rgb(90, 115, 135))';
                             weatherElements += `
                                 <div class="clouds dark evening"></div>
-                                <div class="rain evening ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                                <div class="rain evening ${rainIntensity} ${windClass}"></div>
                             `;
                             break;
                         case 71: case 73: case 75: // Snow - Evening snowfall
@@ -1488,7 +1488,7 @@
                             pseudoGradientColors = 'linear-gradient(rgb(25, 35, 55), rgb(50, 65, 80))';
                             weatherElements += `
                                 <div class="clouds thunderstorm evening"></div>
-                                <div class="rain heavy evening"></div>
+                                <div class="rain heavy evening ${windClass}"></div>
                                 <div class="lightning evening"></div>
                                 ${current.weathercode >= 96 ? '<div class="hail evening"></div>' : ''}
                             `;
@@ -1551,7 +1551,7 @@
                         pseudoGradientColors = 'linear-gradient(rgb(15, 25, 40), rgb(30, 40, 55))';
                         weatherElements += `
                             <div class="clouds broken night"></div>
-                            <div class="drizzle night"></div>
+                            <div class="drizzle night ${windClass}"></div>
                         `;
                         break;
                     case 61: case 63: case 65: // Rain - Night downpour
@@ -1561,7 +1561,7 @@
                         pseudoGradientColors = 'linear-gradient(rgb(10, 20, 35), rgb(25, 35, 50))';
                         weatherElements += `
                             <div class="clouds dark night"></div>
-                            <div class="rain night ${current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light')}"></div>
+                            <div class="rain night ${rainIntensity} ${windClass}"></div>
                         `;
                         break;
                     case 71: case 73: case 75: // Snow - Night snowfall
@@ -1580,7 +1580,7 @@
                         pseudoGradientColors = 'linear-gradient(rgb(5, 10, 25), rgb(15, 20, 35))';
                         weatherElements += `
                             <div class="clouds thunderstorm night"></div>
-                            <div class="rain heavy night"></div>
+                            <div class="rain heavy night ${windClass}"></div>
                             <div class="lightning night"></div>
                             ${current.weathercode >= 96 ? '<div class="hail night"></div>' : ''}
                         `;

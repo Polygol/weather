@@ -1046,6 +1046,27 @@
             }
         };
         
+        // Helper function to get timezone from coordinates
+        async function getTimezoneFromCoords(latitude, longitude) {
+            try {
+                // Using browser's timezone as fallback - for production, consider using a timezone API
+                return Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch (error) {
+                console.warn('Failed to get timezone, using UTC:', error);
+                return 'UTC';
+            }
+        }
+        
+        // Helper function to determine temperature unit based on location
+        function getTemperatureUnit(country) {
+            // Countries that primarily use Fahrenheit
+            const fahrenheitCountries = ['US', 'USA', 'United States', 'Liberia', 'Myanmar', 'Burma'];
+            
+            return fahrenheitCountries.some(c => 
+                country?.toLowerCase().includes(c.toLowerCase())
+            ) ? 'fahrenheit' : 'celsius';
+        }
+        
         async function fetchLocationAndWeather() {
             return new Promise((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(async (position) => {
@@ -1053,6 +1074,8 @@
                         const { latitude, longitude } = position.coords;
                         const geocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
                         let city = 'Unknown Location';
+                        let country = '';
+                        let timezone = 'UTC';
                         
                         try {
                             const geocodingResponse = await fetch(geocodingUrl);
@@ -1061,13 +1084,22 @@
                                 geocodingData.address.town ||
                                 geocodingData.address.village ||
                                 'Unknown Location';
+                            country = geocodingData.address.country || '';
+                            
+                            // Get timezone based on coordinates
+                            timezone = await getTimezoneFromCoords(latitude, longitude);
                         } catch (geocodingError) {
-                            console.warn('Failed to retrieve your weather location', geocodingError);
+                            console.warn('Failed to retrieve location details', geocodingError);
+                            timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                         }
         
-                        const currentWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
-                        const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,weathercode&timezone=Europe/London`;
-                        const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=Europe/London`;
+                        // Determine temperature unit based on location
+                        const temperatureUnit = getTemperatureUnit(country);
+                        const tempUnitParam = temperatureUnit === 'fahrenheit' ? '&temperature_unit=fahrenheit' : '';
+        
+                        const currentWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
+                        const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,weathercode&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
+                        const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
                         
                         const [currentResponse, dailyResponse, hourlyResponse] = await Promise.all([
                             fetch(currentWeatherUrl),
@@ -1078,16 +1110,18 @@
                         const currentWeatherData = await currentResponse.json();
                         const dailyForecastData = await dailyResponse.json();
                         const hourlyForecastData = await hourlyResponse.json();
-         
-                        resolve({
+        
+                        const weatherData = {
                             city,
+                            country,
+                            timezone,
+                            temperatureUnit,
                             current: currentWeatherData.current_weather,
                             dailyForecast: dailyForecastData.daily,
                             hourlyForecast: hourlyForecastData.hourly
-                        });
-        
+                        };
+         
                         localStorage.setItem('lastWeatherData', JSON.stringify(weatherData));
-        
                         resolve(weatherData);
                         
                     } catch (error) {
@@ -1114,16 +1148,23 @@
             });
         }
         
-        function getDayOfWeek(dateString) {
+        function getDayOfWeek(dateString, timezone = 'UTC') {
             const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', { weekday: 'long' });
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'long',
+                timeZone: timezone 
+            });
         }
         
-        function getHourString(dateString) {
+        function getHourString(dateString, timezone = 'UTC') {
             const date = new Date(dateString);
-            return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString('en-GB', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                timeZone: timezone 
+            });
         }
-
+        
         // Function to determine wind class based on wind speed
         function getWindClass(windSpeed) {
             if (windSpeed >= 25) return 'very-windy';
@@ -1193,17 +1234,21 @@
                 return;
             }
         
-            const { city, current, dailyForecast, hourlyForecast } = weatherData;
+            const { city, country, timezone, temperatureUnit, current, dailyForecast, hourlyForecast } = weatherData;
             const currentWeather = weatherConditions[current.weathercode] || { description: 'Unknown', icon: () => '❓' };
         
+            // Use the location's timezone for all time calculations
             const currentTime = new Date();
-            const nextDayMidnight = new Date(currentTime);
+            const nextDayMidnight = new Date(currentTime.toLocaleString("en-US", {timeZone: timezone}));
             nextDayMidnight.setHours(24, 0, 0, 0);
         
             const validHourlyForecast = hourlyForecast.time
                 .map((time, index) => {
                     const forecastTime = new Date(time);
-                    if (forecastTime > currentTime && forecastTime < nextDayMidnight) {
+                    const localForecastTime = new Date(forecastTime.toLocaleString("en-US", {timeZone: timezone}));
+                    const localCurrentTime = new Date(currentTime.toLocaleString("en-US", {timeZone: timezone}));
+                    
+                    if (localForecastTime > localCurrentTime && localForecastTime < nextDayMidnight) {
                         return {
                             time: time,
                             temperature: hourlyForecast.temperature_2m[index],
@@ -1214,7 +1259,9 @@
                 })
                 .filter(Boolean);
         
-            const hour = new Date().getHours();
+            // Use timezone-aware hour calculation
+            const currentLocalTime = new Date(currentTime.toLocaleString("en-US", {timeZone: timezone}));
+            const hour = currentLocalTime.getHours();
             const isDaytime = hour >= 6 && hour <= 18;
             
             // Time-specific periods for more realism
@@ -1222,7 +1269,7 @@
             const isEvening = hour >= 16 && hour < 20;
             const isNight = hour < 6 || hour >= 20;
             const isMidday = hour >= 10 && hour < 16;
-
+        
             // Wind
             const windClass = getWindClass(current.windspeed);
             const rainIntensity = current.weathercode >= 80 ? 'heavy' : (current.weathercode >= 63 ? 'medium' : 'light');
@@ -1637,6 +1684,9 @@
             // Add pseudo-element gradient through CSS variable
             detailedWeatherElement.style.setProperty('--pseudo-gradient', pseudoGradientColors);
         
+            // Temperature unit symbol
+            const tempUnitSymbol = temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+        
             // Adding the weather content
             document.getElementById('detailedWeather').innerHTML = `
                 <div class="weather-elements-container">
@@ -1644,7 +1694,7 @@
                 </div>
                 <p class="location-text">${city}</p>
                 <span class="weather-icon material-symbols-rounded">${currentWeather.icon(isDaytime)}</span>
-                <h2>${current.temperature}°</h2>
+                <h2>${current.temperature}${tempUnitSymbol}</h2>
                 
                 <p>${currentWeather.description}</p>
                 <p class="additional-info">${current.windspeed} km/h</p>
@@ -1652,14 +1702,14 @@
                     ${validHourlyForecast.map((hour, index) => {
                         const hourClass = index === 0 ? 'hour first' :
                             index === validHourlyForecast.length - 1 ? 'hour last' : 'hour';
-                        const hourString = getHourString(hour.time);
+                        const hourString = getHourString(hour.time, timezone);
                         const hourWeather = weatherConditions[hour.weatherCode] || { description: 'Unknown', icon: () => '❓' };
         
                         return `
                             <div class="${hourClass}">
                                 <span>${hourString}</span>
-                                <span>${hour.temperature}°</span>
-                                <span class="material-symbols-rounded">${hourWeather.icon(isDaytimeForHour(hour.time))}</span>
+                                <span>${hour.temperature}${tempUnitSymbol}</span>
+                                <span class="material-symbols-rounded">${hourWeather.icon(isDaytimeForHour(hour.time, timezone))}</span>
                                 <span>${hourWeather.description}</span>
                             </div>
                         `;
@@ -1667,7 +1717,7 @@
                 </div>
                 <div class="forecast-container">
                     ${dailyForecast.time.slice(1, 6).map((date, index) => {
-                        const dayName = getDayOfWeek(date);
+                        const dayName = getDayOfWeek(date, timezone);
                         const weatherCode = dailyForecast.weathercode[index + 1];
                         const maxTemp = dailyForecast.temperature_2m_max[index + 1];
                         const forecastWeather = weatherConditions[weatherCode] || { description: 'Unknown', icon: () => '❓' };
@@ -1676,13 +1726,37 @@
                             <div class="forecast-day">
                                 <p class="day-name">${dayName}</p>
                                 <p class="forecast-icon material-symbols-rounded">${forecastWeather.icon(true)}</p>
-                                <p>${maxTemp}°</p>
+                                <p>${maxTemp}${tempUnitSymbol}</p>
                                 <p>${forecastWeather.description}</p>
                             </div>
                         `;
                     }).join('')}
                 </div>
             `;
+        
+            setTimeout(() => {
+                // Handle drizzle elements
+                const drizzleElements = document.querySelectorAll('.drizzle');
+                drizzleElements.forEach(drizzleElement => {
+                    createRaindrops(drizzleElement, 'drizzle');
+                });
+                
+                // Handle rain elements with different intensities
+                const rainElements = document.querySelectorAll('.rain');
+                rainElements.forEach(rainElement => {
+                    let intensity = 'medium'; // default
+                    
+                    if (rainElement.classList.contains('light')) {
+                        intensity = 'light';
+                    } else if (rainElement.classList.contains('medium')) {
+                        intensity = 'medium';
+                    } else if (rainElement.classList.contains('heavy')) {
+                        intensity = 'heavy';
+                    }
+                    
+                    createRaindrops(rainElement, intensity);
+                });
+            }, 100);
         }
         
         // Helper functions for gradient transitions remain the same
@@ -1748,8 +1822,9 @@
         }
         
         // Helper function to determine if a specific hour is daytime
-        function isDaytimeForHour(timeString) {
-            const hour = new Date(timeString).getHours();
+        function isDaytimeForHour(timeString, timezone = 'UTC') {
+            const date = new Date(timeString);
+            const hour = new Date(date.toLocaleString("en-US", {timeZone: timezone})).getHours();
             return hour >= 6 && hour <= 18;
         }
 

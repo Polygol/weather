@@ -1049,7 +1049,7 @@
         // Helper function to get timezone from coordinates
         async function getTimezoneFromCoords(latitude, longitude) {
             try {
-                // Using browser's timezone as fallback - for production, consider using a timezone API
+                // Use browser's timezone as the primary method
                 return Intl.DateTimeFormat().resolvedOptions().timeZone;
             } catch (error) {
                 console.warn('Failed to get timezone, using UTC:', error);

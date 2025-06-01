@@ -1173,7 +1173,7 @@
                         const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,daylight_duration,sunshine_duration,uv_index_max,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,shortwave_radiation_sum&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
                         const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,pressure_msl,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
                         const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=${encodeURIComponent(timezone)}`;
-                        const astronomyUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset,moonrise,moonset&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
+                        const astronomyUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
         
                         // Make API calls
                         const [currentResponse, dailyResponse, hourlyResponse, airQualityResponse, astronomyResponse] = await Promise.all([
@@ -1256,8 +1256,8 @@
 
         function getMoonPhase(date) {
             const now = new Date(date);
-            const year = now.getFullYear();
-            const month = now.getMonth() + 1;
+            let year = now.getFullYear();  // Changed to let
+            let month = now.getMonth() + 1;  // Changed to let
             const day = now.getDate();
             
             let c, e, jd, b;

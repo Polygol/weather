@@ -923,6 +923,74 @@
         0% { background-position: 0 0; }
         100% { background-position: 20px 200px; }
     }
+
+    .weather-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 20px 0;
+        user-select: none;
+    }
+    
+    .info-card {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 15px;
+        text-align: center;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .info-label {
+        font-size: 0.9rem;
+        color: var(--secondary-text-color);
+        font-weight: 400;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .forecast-day {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .forecast-day:hover {
+        transform: translateY(-2px);
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+    
+    .forecast-day.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .forecast-day.active::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 6px;
+        height: 6px;
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 20px 0 10px 0;
+        color: var(--text-color);
+    }
     </style>
 </head>
 <body>
@@ -936,6 +1004,9 @@
     <a href="https://open-meteo.com/" target="_blank" style="position: absolute; top: 10px; left: 15px; font-size: small; color: #f9f9f9; text-decoration: none;">Open-Meteo</a>
   
     <script>
+        let selectedDayIndex = 0;
+        let globalWeatherData = null;
+        
         function isDaytime() {
             const hour = new Date().getHours();
             return hour >= 6 && hour <= 18;
@@ -1097,28 +1168,36 @@
                         const temperatureUnit = getTemperatureUnit(country);
                         const tempUnitParam = temperatureUnit === 'fahrenheit' ? '&temperature_unit=fahrenheit' : '';
         
-                        const currentWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
-                        const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,weathercode&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
-                        const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode&timezone=${encodeURIComponent(timezone)}${tempUnitParam}`;
-                        
-                        const [currentResponse, dailyResponse, hourlyResponse] = await Promise.all([
+                        const currentWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=${encodeURIComponent(timezone)}${tempUnit}`;
+                        const dailyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,sunrise,sunset,daylight_duration,sunshine_duration,uv_index_max,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,shortwave_radiation_sum&timezone=${encodeURIComponent(timezone)}${tempUnit}`;
+                        const hourlyForecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,pressure_msl,cloud_cover,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index&timezone=${encodeURIComponent(timezone)}${tempUnit}`;
+                        const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&current=us_aqi,pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=${encodeURIComponent(timezone)}`;
+                        const astronomyUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=sunrise,sunset,moonrise,moonset&timezone=${encodeURIComponent(timezone)}&forecast_days=7`;
+
+                        const [currentResponse, dailyResponse, hourlyResponse, airQualityResponse, astronomyResponse] = await Promise.all([
                             fetch(currentWeatherUrl),
-                            fetch(dailyForecastUrl),
-                            fetch(hourlyForecastUrl)
+                            fetch(dailyForecastUrl), 
+                            fetch(hourlyForecastUrl),
+                            fetch(airQualityUrl),
+                            fetch(astronomyUrl)
                         ]);
         
-                        const currentWeatherData = await currentResponse.json();
-                        const dailyForecastData = await dailyResponse.json();
-                        const hourlyForecastData = await hourlyResponse.json();
+                        const currentWeather = await currentResponse.json();
+                        const dailyForecast = await dailyResponse.json();  
+                        const hourlyForecast = await hourlyResponse.json();
+                        const airQuality = await airQualityResponse.json();
+                        const astronomy = await astronomyResponse.json();
         
                         const weatherData = {
-                            city,
-                            country,
-                            timezone,
-                            temperatureUnit,
-                            current: currentWeatherData.current_weather,
-                            dailyForecast: dailyForecastData.daily,
-                            hourlyForecast: hourlyForecastData.hourly
+                            city: cityName,
+                            country: countryName, 
+                            timezone: timezone,
+                            temperatureUnit: tempUnit,
+                            current: currentWeather.current,
+                            dailyForecast: dailyForecast.daily,
+                            hourlyForecast: hourlyForecast.hourly,
+                            airQuality: airQuality.current,
+                            astronomy: astronomy.daily
                         };
          
                         localStorage.setItem('lastWeatherData', JSON.stringify(weatherData));
@@ -1170,6 +1249,62 @@
             if (windSpeed >= 25) return 'very-windy';
             if (windSpeed >= 15) return 'windy';
             return '';
+        }
+
+        function getMoonPhase(date) {
+            const now = new Date(date);
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            
+            let c, e, jd, b;
+            
+            if (month < 3) {
+                year--;
+                month += 12;
+            }
+            
+            ++month;
+            c = 365.25 * year;
+            e = 30.6 * month;
+            jd = c + e + day - 694039.09;
+            jd /= 29.5305882;
+            b = parseInt(jd);
+            jd -= b;
+            b = Math.round(jd * 8);
+            
+            if (b >= 8) b = 0;
+            
+            const phases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
+            const phaseNames = ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'];
+            
+            return { icon: phases[b], name: phaseNames[b] };
+        }
+
+        function getHourlyDataForDay(dayIndex, hourlyForecast, timezone) {
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + dayIndex);
+            targetDate.setHours(0, 0, 0, 0);
+            
+            const nextDay = new Date(targetDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            
+            return hourlyForecast.time.map((time, index) => {
+                const hourDate = new Date(time);
+                const localHourDate = new Date(hourDate.toLocaleString("en-US", { timeZone: timezone }));
+                
+                if (localHourDate >= targetDate && localHourDate < nextDay) {
+                    return {
+                        time: time,
+                        temperature: hourlyForecast.temperature_2m[index],
+                        weatherCode: hourlyForecast.weather_code[index],
+                        precipitation: hourlyForecast.precipitation_probability[index],
+                        humidity: hourlyForecast.relative_humidity_2m[index],
+                        windSpeed: hourlyForecast.wind_speed_10m[index]
+                    };
+                }
+                return null;
+            }).filter(Boolean);
         }
         
         function createRaindrops(container, intensity = 'medium') {
@@ -1226,16 +1361,104 @@
                 container.appendChild(raindrop);
             }
         }
-        
+
+        function createWeatherInfoPanel(dayIndex, weatherData) {
+            const { current, dailyForecast, hourlyForecast, airQuality, astronomy } = weatherData;
+            const tempUnit = weatherData.temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+            const speedUnit = 'km/h';
+            
+            // Use current data for today (index 0), daily data for other days
+            const isToday = dayIndex === 0;
+            const dayData = isToday ? current : null;
+            const dailyData = dailyForecast;
+            
+            const moonPhase = getMoonPhase(dailyData.time[dayIndex]);
+            
+            return `
+                <div class="weather-info-grid">
+                    <div class="info-card">
+                        <span class="info-label">Feels Like</span>
+                        <span class="info-value">${isToday ? Math.round(current.apparent_temperature) : Math.round(dailyData.apparent_temperature_max[dayIndex])}${tempUnit}</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Humidity</span>
+                        <span class="info-value">${isToday ? current.relative_humidity_2m : 'N/A'}%</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Pressure</span>
+                        <span class="info-value">${isToday ? Math.round(current.pressure_msl) : 'N/A'} hPa</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">UV Index</span>
+                        <span class="info-value">${Math.round(dailyData.uv_index_max[dayIndex] || 0)}</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Precipitation</span>
+                        <span class="info-value">${Math.round((dailyData.precipitation_sum[dayIndex] || 0) * 10) / 10} mm</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Chance of Rain</span>
+                        <span class="info-value">${dailyData.precipitation_probability_max[dayIndex] || 0}%</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Wind Gusts</span>
+                        <span class="info-value">${Math.round(dailyData.wind_gusts_10m_max[dayIndex] || 0)} ${speedUnit}</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Cloud Cover</span>
+                        <span class="info-value">${isToday ? current.cloud_cover : 'N/A'}%</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Sunrise</span>
+                        <span class="info-value">${new Date(astronomy.sunrise[dayIndex]).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Sunset</span>
+                        <span class="info-value">${new Date(astronomy.sunset[dayIndex]).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    <div class="info-card">
+                        <span class="info-label">Moon Phase</span>
+                        <span class="info-value">${moonPhase.icon} ${moonPhase.name}</span>
+                    </div>
+                    ${airQuality && isToday ? `
+                    <div class="info-card">
+                        <span class="info-label">Air Quality</span>
+                        <span class="info-value">AQI ${airQuality.us_aqi || 'N/A'}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
         async function displayDetailedWeather() {
             const weatherData = await fetchLocationAndWeather();
             if (!weatherData) {
                 document.getElementById('detailedWeather').innerHTML = 'Failed to load weather';
                 return;
             }
-        
+            
+            globalWeatherData = weatherData; // Store globally
+            updateWeatherDisplay(selectedDayIndex);
+        }
+
+        function updateWeatherDisplay(dayIndex) {
+            const weatherData = globalWeatherData;
             const { city, country, timezone, temperatureUnit, current, dailyForecast, hourlyForecast } = weatherData;
-            const currentWeather = weatherConditions[current.weathercode] || { description: 'Unknown', icon: () => '❓' };
+            
+            const isToday = dayIndex === 0;
+            const displayTemp = isToday ? current.temperature_2m : dailyForecast.temperature_2m_max[dayIndex];
+            const displayCode = isToday ? current.weather_code : dailyForecast.weather_code[dayIndex];
+            const currentHour = new Date().getHours();
+            const isDaytime = isToday ? (currentHour >= 6 && currentHour <= 18) : true;
+            
+            const condition = weatherConditions[displayCode] || { description: 'Unknown', icon: () => '❓' };
+            const tempUnit = temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+            
+            // Get hourly data for selected day
+            const hourlyData = getHourlyDataForDay(dayIndex, hourlyForecast, timezone);
+            
+            // Create weather info panel
+            const weatherInfoPanel = createWeatherInfoPanel(dayIndex, weatherData);
         
             // Use the location's timezone for all time calculations
             const currentTime = new Date();
@@ -1670,7 +1893,62 @@
                 }, 100);
             }
         
-            const detailedWeatherElement = document.getElementById('detailedWeather');
+            const detailedWeather = document.getElementById('detailedWeather');
+            
+            detailedWeather.innerHTML = `
+                <div class="weather-elements-container">
+                    ${weatherEffects}
+                </div>
+                <p class="location-text">${city}</p>
+                <span class="weather-icon material-symbols-rounded">${condition.icon(isDaytime)}</span>
+                <h2>${Math.round(displayTemp)}${tempUnit}</h2>
+                <p>${condition.description}</p>
+                <p class="additional-info">${Math.round(isToday ? current.wind_speed_10m : dailyForecast.wind_speed_10m_max[dayIndex])} km/h</p>
+                
+                <div class="section-title">Weather Details</div>
+                ${weatherInfoPanel}
+                
+                <div class="section-title">Hourly Forecast</div>
+                <div class="hourly-forecast">
+                    ${hourlyData.map((hour, index) => {
+                        const hourClass = index === 0 ? 'hour first' : index === hourlyData.length - 1 ? 'hour last' : 'hour';
+                        const hourTime = getHourString(hour.time, timezone);
+                        const hourCondition = weatherConditions[hour.weatherCode] || { description: 'Unknown', icon: () => '❓' };
+                        const hourIsDaytime = isDaytimeForHour(hour.time, timezone);
+                        
+                        return `
+                            <div class="${hourClass}">
+                                <span>${hourTime}</span>
+                                <span>${Math.round(hour.temperature)}${tempUnit}</span>
+                                <span class="material-symbols-rounded">${hourCondition.icon(hourIsDaytime)}</span>
+                                <span>${hourCondition.description}</span>
+                                <span>💧${hour.precipitation || 0}%</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <div class="section-title">7-Day Forecast</div>
+                <div class="forecast-container">
+                    ${dailyForecast.time.slice(0, 7).map((date, index) => {
+                        const dayName = index === 0 ? 'Today' : getDayOfWeek(date, timezone);
+                        const weatherCode = dailyForecast.weather_code[index];
+                        const maxTemp = dailyForecast.temperature_2m_max[index];
+                        const minTemp = dailyForecast.temperature_2m_min[index];
+                        const condition = weatherConditions[weatherCode] || { description: 'Unknown', icon: () => '❓' };
+                        const isActive = index === dayIndex ? 'active' : '';
+                        
+                        return `
+                            <div class="forecast-day ${isActive}" onclick="selectDay(${index})">
+                                <p class="day-name">${dayName}</p>
+                                <p class="forecast-icon material-symbols-rounded">${condition.icon(true)}</p>
+                                <p>${Math.round(maxTemp)}°/${Math.round(minTemp)}${tempUnit}</p>
+                                <p>${condition.description}</p>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
             
             // Get the current background for transition
             const currentBackgroundGradient = window.getComputedStyle(detailedWeatherElement).background;
@@ -1686,53 +1964,6 @@
         
             // Temperature unit symbol
             const tempUnitSymbol = temperatureUnit === 'fahrenheit' ? '°F' : '°C';
-        
-            // Adding the weather content
-            document.getElementById('detailedWeather').innerHTML = `
-                <div class="weather-elements-container">
-                    ${weatherElements}
-                </div>
-                <p class="location-text">${city}</p>
-                <span class="weather-icon material-symbols-rounded">${currentWeather.icon(isDaytime)}</span>
-                <h2>${current.temperature}${tempUnitSymbol}</h2>
-                
-                <p>${currentWeather.description}</p>
-                <p class="additional-info">${current.windspeed} km/h</p>
-                <div class="hourly-forecast">
-                    ${validHourlyForecast.map((hour, index) => {
-                        const hourClass = index === 0 ? 'hour first' :
-                            index === validHourlyForecast.length - 1 ? 'hour last' : 'hour';
-                        const hourString = getHourString(hour.time, timezone);
-                        const hourWeather = weatherConditions[hour.weatherCode] || { description: 'Unknown', icon: () => '❓' };
-        
-                        return `
-                            <div class="${hourClass}">
-                                <span>${hourString}</span>
-                                <span>${hour.temperature}${tempUnitSymbol}</span>
-                                <span class="material-symbols-rounded">${hourWeather.icon(isDaytimeForHour(hour.time, timezone))}</span>
-                                <span>${hourWeather.description}</span>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-                <div class="forecast-container">
-                    ${dailyForecast.time.slice(1, 6).map((date, index) => {
-                        const dayName = getDayOfWeek(date, timezone);
-                        const weatherCode = dailyForecast.weathercode[index + 1];
-                        const maxTemp = dailyForecast.temperature_2m_max[index + 1];
-                        const forecastWeather = weatherConditions[weatherCode] || { description: 'Unknown', icon: () => '❓' };
-        
-                        return `
-                            <div class="forecast-day">
-                                <p class="day-name">${dayName}</p>
-                                <p class="forecast-icon material-symbols-rounded">${forecastWeather.icon(true)}</p>
-                                <p>${maxTemp}${tempUnitSymbol}</p>
-                                <p>${forecastWeather.description}</p>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
         
             setTimeout(() => {
                 // Handle drizzle elements
@@ -1828,33 +2059,32 @@
             return hour >= 6 && hour <= 18;
         }
 
-        // Theme synchronization for Gurapp side
+        function selectDay(dayIndex) {
+            selectedDayIndex = dayIndex;
+            updateWeatherDisplay(dayIndex);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial theme application based on localStorage
-            const storedTheme = localStorage.getItem('theme') || 'dark';
-            document.body.classList.toggle('light-theme', storedTheme === 'light');
+            const theme = localStorage.getItem('theme') || 'dark';
+            document.body.classList.toggle('light-theme', theme === 'light');
             
-            // Initial animation preference application
             const animationsEnabled = localStorage.getItem('animationsEnabled') !== 'false';
             document.body.classList.toggle('reduce-animations', !animationsEnabled);
             
-            // Set up listener for theme change messages
             window.addEventListener('message', (event) => {
-                // Verify message origin and type for security
                 if (event.origin === window.location.origin) {
                     if (event.data.type === 'themeUpdate') {
-                        const newTheme = event.data.theme;
-                        document.body.classList.toggle('light-theme', newTheme === 'light');
-                        console.log('App theme updated via message to:', newTheme);
+                        const theme = event.data.theme;
+                        document.body.classList.toggle('light-theme', theme === 'light');
+                        console.log('App theme updated via message to:', theme);
                     } else if (event.data.type === 'animationsUpdate') {
-                        const enableAnimations = event.data.enabled;
-                        document.body.classList.toggle('reduce-animations', !enableAnimations);
-                        console.log('App animations updated via message to:', enableAnimations ? 'enabled' : 'disabled');
+                        const enabled = event.data.enabled;
+                        document.body.classList.toggle('reduce-animations', !enabled);
+                        console.log('App animations updated via message to:', enabled ? 'enabled' : 'disabled');
                     }
                 }
             });
             
-            // Initialize the app
             displayDetailedWeather();
         });
     </script>

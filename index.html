@@ -1477,8 +1477,8 @@
                     if (localForecastTime > localCurrentTime && localForecastTime < nextDayMidnight) {
                         return {
                             time: time,
-                            temperature: hourlyForecast.temperature_2m[index],
-                            weatherCode: hourlyForecast.weathercode[index]
+                            temperature: hourlyForecast.temperature_2m?.[index], // Safe access
+                            weatherCode: hourlyForecast.weather_code?.[index] || hourlyForecast.weathercode?.[index] // Note: check both property names
                         };
                     }
                     return null;

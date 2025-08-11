@@ -222,29 +222,34 @@
             text-align: left;
             color: #f9f9f9;
             user-select: none;
+            display: flex;
+            flex-direction: row;
+            overflow: auto;
+            gap: 10px;
         }
 
         .hour {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 3fr;
-            align-items: center;
+            grid-template-columns: 1fr;
             gap: 10px;
-            padding: 7px 15px;
+            padding: 15px 10px;
             background-color: rgba(255, 255, 255, 0.1);
             margin: 5px 0;
             border-radius: 10px;
             user-select: none;
             border: 1px solid var(--glass-border-light);
             backdrop-filter: blur(5px) var(--edge-refraction-filter);
+            justify-items: center;
+            align-items: start;
         }
 
         .hour.first {
-            border-radius: 25px 25px 10px 10px;
+            border-radius: 25px 10px 10px 25px;
             user-select: none;
         }
 
         .hour.last {
-            border-radius: 10px 10px 25px 25px;
+            border-radius: 10px 25px 25px 10px;
             user-select: none;
         }
 

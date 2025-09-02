@@ -1864,20 +1864,17 @@
             const hour = new Date(date.toLocaleString("en-US", {timeZone: timezone})).getHours();
             return hour >= 6 && hour <= 18;
         }
-
-        // Theme synchronization for Gurapp side
-        document.addEventListener('DOMContentLoaded', () => {
-            // Register the widget with Polygol
-            if (window.Gurasuraisu) {
-                Gurasuraisu.registerWidget({
-                    appName: 'Weather',
-                    widgetId: 'weather-current',
-                    title: 'Current Weather',
-                    url: '/weather/widgets/current-weather.html',
-                    defaultSize: [1, 1],
-                    openUrl: '/weather/index.html' // Tapping the widget opens the main weather app
-                });
-            }
+        
+        window.addEventListener('GurasuraisuReady', () => {
+            // Register the widget as soon as the API is confirmed to be ready.
+            Gurasuraisu.registerWidget({
+                appName: 'Weather',
+                widgetId: 'weather-current',
+                title: 'Current Weather',
+                url: '/weather/widgets/current-weather.html',
+                defaultSize: [1, 1],
+                openUrl: '/weather/index.html'
+            });
             
             // Initialize the app
             displayDetailedWeather();

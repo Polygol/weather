@@ -1894,6 +1894,24 @@
             // Initialize the app
             displayDetailedWeather();
         });
+
+        // Register widgets when the API is ready
+        function onApiReady() {
+            Gurasuraisu.registerWidget({
+                appName: 'Weather', // Must match the name in Polygol's 'apps' object
+                widgetId: 'weather-current-conditions',
+                title: 'Current Weather',
+                url: '/weather/widgets/current-weather.html',
+                defaultSize: [1, 1],
+                openUrl: '/weather/index.html' // Tapping the widget opens this app
+            });
+        }
+
+        if (window.Gurasuraisu) {
+            onApiReady();
+        } else {
+            window.addEventListener('GurasuraisuReady', onApiReady);
+        }
     </script>
 </body>
 </html>

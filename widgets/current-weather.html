@@ -767,7 +767,6 @@
     </style>
 </head>
 <body>
-<body>
     <div class="widget-container" id="widgetContainer">
         <p class="loading">Loading Weather...</p>
     </div>
@@ -1562,6 +1561,12 @@
                 });
             }, 100);
         }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Start the weather fetching process
+            displayCurrentWeather();
+        });
     </script>
 </body>
 </html>

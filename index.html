@@ -227,8 +227,21 @@
             flex-direction: row;
             overflow: auto;
             gap: 10px;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: stretch;
+        }
+
+        .hourly-forecast::-webkit-scrollbar, .modal-content::-webkit-scrollbar {
+            width: 8px; /* Thin scrollbar */
+        }
+
+        .hourly-forecast::-webkit-scrollbar-track, .modal-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .hourly-forecast::-webkit-scrollbar-thumb, .modal-content::-webkit-scrollbar-thumb {
+            background-color: var(--search-background);
+            border-radius: 50px;
         }
 
         .hour {

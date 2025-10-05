@@ -187,14 +187,15 @@
         .forecast-day {
             background-color: rgba(255, 255, 255, 0.1);
             padding: 10px;
-            border-radius: 25px;
+            border-radius: 35px;
+            corner-shape: superellipse(1.5);
             text-align: center;
             flex: 1 1 18%;
             box-sizing: border-box;
             user-select: none;
             display: grid;
             border: 1px solid var(--glass-border-light);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
+            backdrop-filter: var(--edge-refraction-filter) blur(2.5px);
             box-shadow: var(--sun-shadow);
         }
 
@@ -228,7 +229,8 @@
             gap: 10px;
             justify-content: flex-start;
             align-items: stretch;
-            border-radius: 10px
+            border-radius: 10px;
+            corner-shape: superellipse(1.5);
         }
 
         .hourly-forecast::-webkit-scrollbar, .modal-content::-webkit-scrollbar {
@@ -251,9 +253,10 @@
             padding: 15px 10px;
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
+            corner-shape: superellipse(1.5);
             user-select: none;
             border: 1px solid var(--glass-border-light);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
+            backdrop-filter: var(--edge-refraction-filter) blur(2.5px);
             box-shadow: var(--sun-shadow);
             justify-items: center;
             align-items: start;
@@ -261,12 +264,12 @@
         }
 
         .hour.first {
-            border-radius: 25px 10px 10px 25px;
+            border-radius: 35px 10px 10px 35px;
             user-select: none;
         }
 
         .hour.last {
-            border-radius: 10px 25px 25px 10px;
+            border-radius: 10px 35px 35px 10px;
             user-select: none;
         }
 

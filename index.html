@@ -38,7 +38,6 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            transition: background 1s ease-in-out;
             /* Default dark gradient */
             background: linear-gradient(rgb(20, 25, 60), rgb(35, 40, 80)); 
         }
@@ -637,9 +636,59 @@
         }
 
         // --- Background Gradient Transition ---
-        function transitionGradient(element, startGradient, endGradient, duration = 500) {
-            // Simplified transition: just set the new gradient for CSS transition
-            element.style.background = endGradient;
+        function parseRGB(rgbString) {
+            const values = rgbString.match(/\d+/g);
+            if (!values || values.length < 3) {
+                return { r: 0, g: 0, b: 0 };
+            }
+            return {
+                r: parseInt(values[0]),
+                g: parseInt(values[1]),
+                b: parseInt(values[2])
+            };
+        }
+
+        function interpolateColor(color1, color2, progress) {
+            const r = Math.round(color1.r + (color2.r - color1.r) * progress);
+            const g = Math.round(color1.g + (color2.g - color1.g) * progress);
+            const b = Math.round(color1.b + (color2.b - color1.b) * progress);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        let currentAnimationInterval = null;
+
+        function transitionGradient(element, startGradient, endGradient, duration = 1000) {
+            if (currentAnimationInterval) clearInterval(currentAnimationInterval);
+
+            // If startGradient is computed as 'none' or invalid, default to black
+            if (!startGradient || startGradient === 'none') startGradient = 'linear-gradient(rgb(0,0,0), rgb(0,0,0))';
+
+            const startColors = startGradient.match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/g) || ['rgb(0,0,0)', 'rgb(0,0,0)'];
+            const endColors = endGradient.match(/rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)/g) || ['rgb(0,0,0)', 'rgb(0,0,0)'];
+
+            // Ensure we have 2 colors
+            if (startColors.length < 2) startColors.push(startColors[0]);
+            if (endColors.length < 2) endColors.push(endColors[0]);
+
+            const fps = 60;
+            const frameCount = (duration / 1000) * fps;
+            let frame = 0;
+
+            currentAnimationInterval = setInterval(() => {
+                frame++;
+                const progress = frame / frameCount;
+                
+                if (progress >= 1) {
+                    element.style.background = endGradient;
+                    clearInterval(currentAnimationInterval);
+                    return;
+                }
+
+                const c1 = interpolateColor(parseRGB(startColors[0]), parseRGB(endColors[0]), progress);
+                const c2 = interpolateColor(parseRGB(startColors[startColors.length - 1]), parseRGB(endColors[endColors.length - 1]), progress);
+                
+                element.style.background = `linear-gradient(${c1}, ${c2})`;
+            }, 1000 / fps);
         }
 
         function updateWeatherBackground(weatherCode, timezone, windSpeed) {
@@ -651,10 +700,17 @@
             const localTime = new Date(now.toLocaleString("en-US", {timeZone: timezone || 'UTC'}));
             const hour = localTime.getHours();
             
-            const isDaytime = hour >= 6 && hour <= 18;
+            // Refined Time Logic (Mutually Exclusive)
             const isMorning = hour >= 6 && hour < 10;
             const isMidday = hour >= 10 && hour < 16;
             const isEvening = hour >= 16 && hour < 20;
+            // Night covers everything else (20:00 - 06:00)
+            
+            // Theme Switching Logic
+            // Morning/Midday = Bright = Light Theme (Dark Text)
+            // Evening/Night = Dark/Saturated = Dark Theme (Light Text)
+            const useLightTheme = isMorning || isMidday;
+            document.body.classList.toggle('light-theme', useLightTheme);
             
             const windClass = getWindClass(windSpeed);
             const rainIntensity = weatherCode >= 80 ? 'heavy' : (weatherCode >= 63 ? 'medium' : 'light');
@@ -663,37 +719,35 @@
             let pseudoGradientColors = '';
             let weatherElements = '';
 
-            // Massive Switch Statement from Legacy for Visuals
-            if (isDaytime) {
-                if (isMorning) {
-                    // Morning Logic
-                    switch (weatherCode) {
-                        case 0: gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))'; pseudoGradientColors = 'linear-gradient(rgb(255, 128, 0), rgb(255, 215, 0))'; weatherElements = '<div class="sun morning"></div><div class="sunrays morning"></div>'; break;
-                        case 1: gradientColors = 'linear-gradient(rgb(100, 181, 246), rgb(255, 213, 167))'; weatherElements = '<div class="sun morning"></div><div class="clouds few morning"></div>'; break;
-                        case 2: gradientColors = 'linear-gradient(rgb(129, 195, 236), rgb(219, 217, 198))'; weatherElements = '<div class="sun morning behind-clouds"></div><div class="clouds scattered morning"></div>'; break;
-                        case 3: gradientColors = 'linear-gradient(rgb(176, 190, 197), rgb(207, 216, 220))'; weatherElements = '<div class="clouds overcast morning"></div>'; break;
-                        case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(96, 146, 178), rgb(161, 183, 195))'; weatherElements = `<div class="clouds dark morning"></div><div class="rain morning ${rainIntensity} ${windClass}"></div>`; break;
-                        case 95: gradientColors = 'linear-gradient(rgb(67, 90, 120), rgb(108, 128, 147))'; weatherElements = `<div class="clouds thunderstorm morning"></div><div class="rain heavy morning ${windClass}"></div><div class="lightning morning"></div>`; break;
-                        default: gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))'; weatherElements = '<div class="sun morning"></div>';
-                    }
-                } else if (isMidday) {
-                    // Midday Logic
-                    switch (weatherCode) {
-                        case 0: gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))'; pseudoGradientColors = 'linear-gradient(rgb(255, 236, 179), rgb(255, 255, 240))'; weatherElements = '<div class="sun midday"></div><div class="sunrays midday"></div>'; break;
-                        case 1: case 2: gradientColors = 'linear-gradient(rgb(30, 144, 255), rgb(135, 206, 250))'; weatherElements = '<div class="sun midday"></div><div class="clouds few midday"></div>'; break;
-                        case 3: gradientColors = 'linear-gradient(rgb(137, 152, 170), rgb(189, 198, 207))'; weatherElements = '<div class="clouds overcast midday"></div>'; break;
-                        case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(62, 146, 204), rgb(124, 169, 207))'; weatherElements = `<div class="clouds dark midday"></div><div class="rain midday ${rainIntensity} ${windClass}"></div>`; break;
-                        case 95: gradientColors = 'linear-gradient(rgb(47, 79, 103), rgb(86, 105, 124))'; weatherElements = `<div class="clouds thunderstorm midday"></div><div class="rain heavy midday ${windClass}"></div><div class="lightning midday"></div>`; break;
-                        default: gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))'; weatherElements = '<div class="sun midday"></div>';
-                    }
-                } else if (isEvening) {
-                    // Evening Logic
-                    switch (weatherCode) {
-                        case 0: gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))'; pseudoGradientColors = 'linear-gradient(rgb(255, 69, 0), rgb(255, 215, 0))'; weatherElements = '<div class="sun evening"></div><div class="sunrays evening"></div>'; break;
-                        case 1: case 2: gradientColors = 'linear-gradient(rgb(70, 130, 180), rgb(255, 160, 122))'; weatherElements = '<div class="sun evening"></div><div class="clouds few evening"></div>'; break;
-                        case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(54, 92, 125), rgb(121, 143, 161))'; weatherElements = `<div class="clouds dark evening"></div><div class="rain evening ${rainIntensity} ${windClass}"></div>`; break;
-                        default: gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))'; weatherElements = '<div class="sun evening"></div>';
-                    }
+            // Updated Switch Logic based on new time variables
+            if (isMorning) {
+                // Morning Logic
+                switch (weatherCode) {
+                    case 0: gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))'; pseudoGradientColors = 'linear-gradient(rgb(255, 128, 0), rgb(255, 215, 0))'; weatherElements = '<div class="sun morning"></div><div class="sunrays morning"></div>'; break;
+                    case 1: gradientColors = 'linear-gradient(rgb(100, 181, 246), rgb(255, 213, 167))'; weatherElements = '<div class="sun morning"></div><div class="clouds few morning"></div>'; break;
+                    case 2: gradientColors = 'linear-gradient(rgb(129, 195, 236), rgb(219, 217, 198))'; weatherElements = '<div class="sun morning behind-clouds"></div><div class="clouds scattered morning"></div>'; break;
+                    case 3: gradientColors = 'linear-gradient(rgb(176, 190, 197), rgb(207, 216, 220))'; weatherElements = '<div class="clouds overcast morning"></div>'; break;
+                    case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(96, 146, 178), rgb(161, 183, 195))'; weatherElements = `<div class="clouds dark morning"></div><div class="rain morning ${rainIntensity} ${windClass}"></div>`; break;
+                    case 95: gradientColors = 'linear-gradient(rgb(67, 90, 120), rgb(108, 128, 147))'; weatherElements = `<div class="clouds thunderstorm morning"></div><div class="rain heavy morning ${windClass}"></div><div class="lightning morning"></div>`; break;
+                    default: gradientColors = 'linear-gradient(rgb(135, 206, 235), rgb(255, 183, 107))'; weatherElements = '<div class="sun morning"></div>';
+                }
+            } else if (isMidday) {
+                // Midday Logic
+                switch (weatherCode) {
+                    case 0: gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))'; pseudoGradientColors = 'linear-gradient(rgb(255, 236, 179), rgb(255, 255, 240))'; weatherElements = '<div class="sun midday"></div><div class="sunrays midday"></div>'; break;
+                    case 1: case 2: gradientColors = 'linear-gradient(rgb(30, 144, 255), rgb(135, 206, 250))'; weatherElements = '<div class="sun midday"></div><div class="clouds few midday"></div>'; break;
+                    case 3: gradientColors = 'linear-gradient(rgb(137, 152, 170), rgb(189, 198, 207))'; weatherElements = '<div class="clouds overcast midday"></div>'; break;
+                    case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(62, 146, 204), rgb(124, 169, 207))'; weatherElements = `<div class="clouds dark midday"></div><div class="rain midday ${rainIntensity} ${windClass}"></div>`; break;
+                    case 95: gradientColors = 'linear-gradient(rgb(47, 79, 103), rgb(86, 105, 124))'; weatherElements = `<div class="clouds thunderstorm midday"></div><div class="rain heavy midday ${windClass}"></div><div class="lightning midday"></div>`; break;
+                    default: gradientColors = 'linear-gradient(rgb(0, 191, 255), rgb(135, 206, 250))'; weatherElements = '<div class="sun midday"></div>';
+                }
+            } else if (isEvening) {
+                // Evening Logic
+                switch (weatherCode) {
+                    case 0: gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))'; pseudoGradientColors = 'linear-gradient(rgb(255, 69, 0), rgb(255, 215, 0))'; weatherElements = '<div class="sun evening"></div><div class="sunrays evening"></div>'; break;
+                    case 1: case 2: gradientColors = 'linear-gradient(rgb(70, 130, 180), rgb(255, 160, 122))'; weatherElements = '<div class="sun evening"></div><div class="clouds few evening"></div>'; break;
+                    case 61: case 63: case 65: gradientColors = 'linear-gradient(rgb(54, 92, 125), rgb(121, 143, 161))'; weatherElements = `<div class="clouds dark evening"></div><div class="rain evening ${rainIntensity} ${windClass}"></div>`; break;
+                    default: gradientColors = 'linear-gradient(rgb(65, 105, 225), rgb(255, 128, 0))'; weatherElements = '<div class="sun evening"></div>';
                 }
             } else {
                 // Night Logic
@@ -706,8 +760,11 @@
                 }
             }
 
-            // Apply Changes
-            backgroundEl.style.background = gradientColors;
+            // Apply Changes with Transition
+            const currentBg = window.getComputedStyle(backgroundEl).backgroundImage;
+            // Use the new transition function
+            transitionGradient(backgroundEl, currentBg, gradientColors, 1000);
+            
             backgroundEl.style.setProperty('--pseudo-gradient', pseudoGradientColors);
             effectsLayer.innerHTML = weatherElements;
 

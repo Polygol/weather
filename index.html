@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -617,7 +616,7 @@
             if (!savedLocations.some(l => l.id === newLoc.id)) {
                 savedLocations.push(newLoc);
                 localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
-                if (window.Gurasuraisu) Gurasuraisu.showPopup(`Added ${cityData.name}`);
+                Gurasuraisu.showPopup(`Added ${cityData.name}`);
             }
             
             searchInput.value = '';
@@ -720,7 +719,7 @@
 
 		document.getElementById('delete-location-btn').addEventListener('click', async () => {
 		    if (currentLocationIndex !== null) {
-		        if (await window.Gurasuraisu.showConfirm("Remove this location?")) {
+		        if (await Gurasuraisu.showConfirm("Remove this location?")) {
 		            savedLocations.splice(currentLocationIndex, 1);
 		            localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
 		            switchView('locations');

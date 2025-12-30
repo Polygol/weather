@@ -908,11 +908,11 @@
                     card.className = 'item-card';
                     card.innerHTML = `
                         <div class="item-card-title">${loc.name}</div>
-                        <div class="item-card-big-text">${Math.round(data.current.temperature_2m)}°</div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span class="material-symbols-rounded" style="font-size: 32px;">${info.icon}</span>
 							<div class="item-card-subtitle">🡡 ${Math.round(data.daily.temperature_2m_max[0])}° 🡣 ${Math.round(data.daily.temperature_2m_min[0])}°</div>
                         </div>
+                        <div class="item-card-big-text">${Math.round(data.current.temperature_2m)}°</div>
                     	<span class="item-card-subtitle">${info.desc}</span>
                     `;
                     card.onclick = () => openDetails(i, data);

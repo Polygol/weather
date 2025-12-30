@@ -1898,12 +1898,12 @@
         window.addEventListener('GurasuraisuReady', () => {
             // Register the widget as soon as the API is confirmed to be ready.
             Gurasuraisu.registerWidget({
-                appName: 'Weather',
-                widgetId: 'weather-current',
-                title: 'Current Weather',
+                appName: 'Weather Legacy',
+                widgetId: 'weather-current-legacy',
+                title: 'Current Weather (Legacy)',
                 url: '/weather/widgets/current-weather.html',
                 defaultSize: [1, 1],
-                openUrl: '/weather/index.html'
+                openUrl: '/weather/legacy.html'
             });
             
             // Initialize the app

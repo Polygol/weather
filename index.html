@@ -718,15 +718,15 @@
             switchView('details');
         }
 
-        document.getElementById('delete-location-btn').addEventListener('click', async () => {
-            if (currentLocationIndex !== null) {
-                if await window.Gurasuraisu.showConfirm("Remove this location?") {
-                    savedLocations.splice(currentLocationIndex, 1);
-                    localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
-                    switchView('locations');
-                }
-            }
-        });
+		document.getElementById('delete-location-btn').addEventListener('click', async () => {
+		    if (currentLocationIndex !== null) {
+		        if (await window.Gurasuraisu.showConfirm("Remove this location?")) {
+		            savedLocations.splice(currentLocationIndex, 1);
+		            localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
+		            switchView('locations');
+		        }
+		    }
+		});
 
         // --- Init ---
         window.addEventListener('load', () => {

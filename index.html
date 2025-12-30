@@ -20,7 +20,7 @@
 
         body {
             /* Fallback background if gradient fails */
-            background-color: var(--background-color); 
+            background-color: var(--background-color-tr); 
             min-height: 100vh;
             color: var(--text-color);
             transition: color 0.3s;
@@ -38,8 +38,7 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            /* Default dark gradient */
-            background: linear-gradient(rgb(20, 25, 60), rgb(35, 40, 80)); 
+            transition: opacity 0.5s ease;
         }
 
         #dynamic-weather-background::after {
@@ -552,6 +551,20 @@
         let savedLocations = JSON.parse(localStorage.getItem('weather_locations')) || [];
         let currentLocationIndex = null;
         let searchTimeout = null;
+        let savedSystemTheme = localStorage.getItem('theme') || 'dark';
+        
+        sessionStorage.setItem('restoreTheme', savedSystemTheme);
+        let currentWeatherTheme = null;
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'themeUpdate') {
+                savedSystemTheme = event.data.theme;
+                sessionStorage.setItem('restoreTheme', savedSystemTheme);
+                if (document.getElementById('details-view').classList.contains('active') && currentWeatherTheme !== null) {
+                    document.body.classList.toggle('light-theme', currentWeatherTheme);
+                }
+            }
+        });
 
         // --- Extensive Weather Definitions (from Legacy) ---
         function isDaytime() {
@@ -711,6 +724,7 @@
             // Evening/Night = Dark/Saturated = Dark Theme (Light Text)
             const useLightTheme = isMorning || isMidday;
             document.body.classList.toggle('light-theme', useLightTheme);
+            currentWeatherTheme = useLightTheme;
             
             const windClass = getWindClass(windSpeed);
             const rainIntensity = weatherCode >= 80 ? 'heavy' : (weatherCode >= 63 ? 'medium' : 'light');
@@ -797,10 +811,35 @@
                 btn.classList.toggle('active', btn.dataset.view === viewName);
             });
 
-            if (viewName === 'locations') {
-                renderLocationsGrid();
-                // Reset background to neutral or last active when going back to grid?
-                // For now, keep the last set background for smooth transitions
+            // Bug fix: Reset background/theme when leaving details
+            const bg = document.getElementById('dynamic-weather-background');
+            const effects = document.getElementById('weather-effects-layer');
+
+            if (viewName === 'locations' || viewName === 'search') {
+                // Reset to default theme
+                document.body.classList.toggle('light-theme', savedSystemTheme === 'light');
+                const restoredTheme = sessionStorage.getItem('restoreTheme');
+                if (restoredTheme) document.body.classList.toggle('light-theme', restoredTheme === 'light');
+                
+                // Hide dynamic background
+                if (bg) {
+                    bg.style.opacity = '0';
+                    setTimeout(() => {
+                        if (bg.style.opacity === '0') {
+                            bg.style.setProperty('--pseudo-gradient', 'transparent');
+                        }
+                    }, 500);
+                }
+                
+                // Clear weather effects
+                if (effects) effects.innerHTML = '';
+
+                if (viewName === 'locations') {
+                    renderLocationsGrid();
+                }
+            } else if (viewName === 'details') {
+                // Show dynamic background
+                if (bg) bg.style.opacity = '1';
             }
         }
 
@@ -1056,7 +1095,7 @@
         });
 
         window.addEventListener('GurasuraisuReady', () => {
-            // Widget Registration
+            // Register the widget as soon as the API is confirmed to be ready.
             Gurasuraisu.registerWidget({
                 appName: 'Weather',
                 widgetId: 'weather-current',

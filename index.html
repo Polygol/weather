@@ -720,17 +720,10 @@
 
         document.getElementById('delete-location-btn').addEventListener('click', async () => {
             if (currentLocationIndex !== null) {
-                if (window.Gurasuraisu && await window.Gurasuraisu.showConfirm("Remove this location?")) {
+                if await window.Gurasuraisu.showConfirm("Remove this location?") {
                     savedLocations.splice(currentLocationIndex, 1);
                     localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
                     switchView('locations');
-                } else if (!window.Gurasuraisu) {
-                    // Fallback if not in environment
-                    if(confirm("Remove this location?")) {
-                        savedLocations.splice(currentLocationIndex, 1);
-                        localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
-                        switchView('locations');
-                    }
                 }
             }
         });

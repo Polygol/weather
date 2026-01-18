@@ -885,6 +885,18 @@
             const hour = new Date().getHours();
             return hour >= 6 && hour <= 18;
         }
+        
+        // Helper to calculate distance between two coordinates
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
 
         // Helper function to get timezone from coordinates
         async function getTimezoneFromCoords(latitude, longitude) {
@@ -912,25 +924,57 @@
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     try {
                         const { latitude, longitude } = position.coords;
-                        const geocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+                        
+                        let timezone = 'UTC';
+                        try {
+                            timezone = await getTimezoneFromCoords(latitude, longitude);
+                        } catch (e) {
+                             timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        }
+
+                        // --- Geocoding with Caching (Nominatim Policy Compliance) ---
                         let city = 'Unknown Location';
                         let country = '';
-                        let timezone = 'UTC';
                         
-                        try {
-                            const geocodingResponse = await fetch(geocodingUrl);
-                            const geocodingData = await geocodingResponse.json();
-                            city = geocodingData.address.city ||
-                                geocodingData.address.town ||
-                                geocodingData.address.village ||
-                                'Unknown Location';
-                            country = geocodingData.address.country || '';
-                            
-                            // Get timezone based on coordinates
-                            timezone = await getTimezoneFromCoords(latitude, longitude);
-                        } catch (geocodingError) {
-                            console.warn('Failed to retrieve location details', geocodingError);
-                            timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        const cachedGeo = JSON.parse(localStorage.getItem('cached_geo_data') || '{}');
+                        const CACHE_RADIUS_KM = 2.0; 
+                        
+                        let useCachedAddress = false;
+                        if (cachedGeo.latitude && cachedGeo.longitude) {
+                            const dist = getDistanceFromLatLonInKm(latitude, longitude, cachedGeo.latitude, cachedGeo.longitude);
+                            if (dist < CACHE_RADIUS_KM) {
+                                useCachedAddress = true;
+                            }
+                        }
+
+                        if (useCachedAddress) {
+                            city = cachedGeo.city;
+                            country = cachedGeo.country;
+                        } else {
+                            const geocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
+                            try {
+                                const geocodingResponse = await fetch(geocodingUrl);
+                                const geocodingData = await geocodingResponse.json();
+                                city = geocodingData.address.city ||
+                                    geocodingData.address.town ||
+                                    geocodingData.address.village ||
+                                    'Unknown Location';
+                                country = geocodingData.address.country || '';
+                                
+                                localStorage.setItem('cached_geo_data', JSON.stringify({
+                                    latitude,
+                                    longitude,
+                                    city,
+                                    country,
+                                    timestamp: Date.now()
+                                }));
+                            } catch (geocodingError) {
+                                console.warn('Geocoding failed:', geocodingError);
+                                if (cachedGeo.city) {
+                                    city = cachedGeo.city;
+                                    country = cachedGeo.country;
+                                }
+                            }
                         }
         
                         // Determine temperature unit based on location
@@ -966,9 +1010,6 @@
                         
                     } catch (error) {
                         console.error('Error fetching weather data:', error);
-                        if (!navigator.onLine) {
-                            showPopup(currentLanguage.OFFLINE);
-                        }
                         // Return cached data if available
                         const cachedData = localStorage.getItem('lastWeatherData');
                         if (cachedData) {

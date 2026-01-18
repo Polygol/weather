@@ -617,6 +617,18 @@
             };
         }
 
+        // Helper to calculate distance for caching logic
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
         // --- Weather Effects Logic (From Legacy) ---
         function getWindClass(windSpeed) {
             if (windSpeed >= 25) return 'very-windy';
@@ -876,17 +888,43 @@
                 // Try to get current location automatically if list is empty
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     const { latitude, longitude } = pos.coords;
-                    // Reverse geocode mostly for the name
-                    try {
-                        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-                        const geoData = await geoRes.json();
-                        const city = geoData.address.city || geoData.address.town || "My Location";
-                        
-                        const newLoc = { id: Date.now(), name: city, lat: latitude, lon: longitude, country: geoData.address.country };
+                    
+                    // --- Caching Logic for Nominatim Compliance ---
+                    let city = null;
+                    let country = null;
+                    const cachedGeo = JSON.parse(localStorage.getItem('cached_geo_data') || '{}');
+                    
+                    if (cachedGeo.latitude && cachedGeo.longitude) {
+                        const dist = getDistanceFromLatLonInKm(latitude, longitude, cachedGeo.latitude, cachedGeo.longitude);
+                        if (dist < 2.0) { // < 2km use cache
+                             city = cachedGeo.city;
+                             country = cachedGeo.country;
+                        }
+                    }
+
+                    if (!city) {
+                        // Reverse geocode if no cache
+                        try {
+                            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                            const geoData = await geoRes.json();
+                            city = geoData.address.city || geoData.address.town || "My Location";
+                            country = geoData.address.country;
+                            
+                            // Update shared cache
+                            localStorage.setItem('cached_geo_data', JSON.stringify({
+                                latitude, longitude, city, country, timestamp: Date.now()
+                            }));
+                        } catch(e) {
+                             city = "My Location"; // Fallback
+                        }
+                    }
+
+                    if (city) {
+                        const newLoc = { id: Date.now(), name: city, lat: latitude, lon: longitude, country: country };
                         savedLocations.push(newLoc);
                         localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
                         renderLocationsGrid();
-                    } catch(e) {}
+                    }
                 }, () => {
                     grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--secondary-text-color);">No locations saved.<br>Use "Add City" to start.</div>`;
                 });

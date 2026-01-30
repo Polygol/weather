@@ -55,7 +55,6 @@
             transition: opacity 1s ease;
         }
 
-        /* Weather Elements CSS (Imported from Legacy) */
         .weather-elements-container {
             position: absolute;
             top: 0;
@@ -441,24 +440,6 @@
     </style>
 </head>
 <body data-app-name="WEATHER">
-    <!-- Shared Glass Filter -->
-    <svg style="display: none">
-        <filter id="edge-refraction-only" color-interpolation-filters="linearRGB">
-            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="turbulence"></feTurbulence>
-            <feMorphology in="SourceGraphic" operator="erode" radius="4" result="eroded"></feMorphology>
-            <feComposite in="SourceGraphic" in2="eroded" operator="out" result="border_mask"></feComposite>
-            <feComposite in="turbulence" in2="border_mask" operator="in" result="edge_turbulence"></feComposite>
-            <feDisplacementMap in="SourceGraphic" in2="edge_turbulence" scale="15" xChannelSelector="R" yChannelSelector="G" result="disp_positive"></feDisplacementMap>
-            <feDisplacementMap in="SourceGraphic" in2="edge_turbulence" scale="-15" xChannelSelector="R" yChannelSelector="G" result="disp_negative"></feDisplacementMap>
-            <feFlood flood-color="white" width="50%" height="50%" x="0" y="0" result="topLeftRect"></feFlood>
-            <feFlood flood-color="white" width="50%" height="50%" x="50%" y="50%" result="bottomRightRect"></feFlood>
-            <feComposite in="disp_positive" in2="topLeftRect" operator="in" result="topLeft_part"></feComposite>
-            <feComposite in="disp_negative" in2="bottomRightRect" operator="in" result="bottomRight_part"></feComposite>
-            <feBlend in="topLeft_part" in2="bottomRight_part" mode="lighten" result="blended_image"></feBlend>
-            <feComponentTransfer in="blended_image"><feFuncA type="linear" slope="0.95"></feFuncA></feComponentTransfer>
-        </filter>
-    </svg>
-
     <!-- Dynamic Background Layer -->
     <div id="dynamic-weather-background">
         <div id="weather-effects-layer" class="weather-elements-container"></div>

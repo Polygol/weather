@@ -179,7 +179,7 @@
             flex-direction: column;
             gap: 10px;
             border: 1px solid var(--glass-border);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
+            --fx-filter: var(--blur1) glass(0.6, 8, 0.2);
             box-shadow: var(--sun-shadow);
             position: relative;
             overflow: hidden;
@@ -229,7 +229,7 @@
             gap: 20px;
             width: 100%;
             box-shadow: var(--sun-shadow);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(2.5px);
+            --fx-filter: var(--blur1) glass(0.6, 8, 0.2);
             min-height: 160px;
         }
 
@@ -274,7 +274,7 @@
             border: 1px solid var(--glass-border);
             background: var(--search-background);
             color: var(--text-color);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
+            --fx-filter: var(--blur2) glass(0.6, 8, 0.2);
             box-shadow: var(--sun-shadow);
             font-size: 16px;
             outline: none;
@@ -306,7 +306,7 @@
             border: 1px solid var(--glass-border);
             color: var(--text-color);
             cursor: pointer;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
+            --fx-filter: var(--blur2) glass(0.6, 8, 0.2);
             box-shadow: var(--sun-shadow);
             justify-content: space-between;
         }
@@ -349,7 +349,7 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
+            --fx-filter: var(--blur2) glass(0.6, 8, 0.2);
 			box-shadow: var(--sun-shadow);
         }
 
@@ -388,7 +388,7 @@
             background: var(--search-background);
             border-radius: 100px;
             border: 1px solid var(--glass-border);
-            backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
+            --fx-filter: var(--blur2) glass(0.6, 8, 0.2);
 			box-shadow: var(--sun-shadow);
         }
 		
@@ -406,7 +406,7 @@
 				border-radius: 35px;
 				corner-shape: superellipse(1.5);
 				padding: 0 10px;
-				backdrop-filter: var(--edge-refraction-filter) saturate(2) blur(5px);
+				--fx-filter: var(--blur2) glass(0.6, 8, 0.2);
 				box-shadow: var(--sun-shadow);
 			}
 		}

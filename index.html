@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Weather</title>
+    <title data-lang-key="TITLE">Weather</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0" />
-    <script src="https://cdn.jsdelivr.net/gh/Polygol/polygol.github.io@main/assets/gurapp/api/gurasuraisu-api.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/gh/Polygol/polygol.github.io@main/assets/polygolapp/api/polygol-api.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
@@ -430,6 +430,7 @@
             justify-content: center;
         }
     </style>
+    <script src="lang.js"></script>
 </head>
 <body data-app-name="WEATHER">
     <!-- Dynamic Background Layer -->
@@ -441,11 +442,11 @@
     <div class="toolbar">
         <button class="tab-btn active" data-view="locations">
             <span class="material-symbols-rounded">home</span>
-            Home
+            <span data-lang-key="HOME">Home</span>
         </button>
         <button class="tab-btn" data-view="search">
             <span class="material-symbols-rounded">search</span>
-            Search
+            <span data-lang-key="SEARCH">Search</span>
         </button>
     </div>
 
@@ -455,7 +456,7 @@
             <div id="locations-grid" class="item-grid">
                 <!-- Location cards injected here -->
             </div>
-			<a href="https://open-meteo.com/" target="_blank" style="font-size: small;color: var(--text-color);text-decoration: none;position: absolute;bottom: 20px;">Data from Open-Meteo</a>
+			<a href="https://open-meteo.com/" target="_blank" style="font-size: small;color: var(--text-color);text-decoration: none;position: absolute;bottom: 20px;"><span data-lang-key="DATA_SOURCE">Data from Open-Meteo</span></a>
             <div id="loading-locations" style="display:none; justify-content:center;">
             <svg class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="currentColor" stroke="none" class="loading-spinner-ind" /></svg>            </div>
         </div>
@@ -500,15 +501,15 @@
                     <div class="stat-value" id="detail-feels">--°</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">humidity_percentage</span> Humidity</div>
+                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">humidity_percentage</span> <span data-lang-key="HUMIDITY">Humidity</span></div>
                     <div class="stat-value" id="detail-humidity">--%</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">air</span> Wind</div>
+                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">air</span> <span data-lang-key="WIND">Wind</span></div>
                     <div class="stat-value" id="detail-wind">-- km/h</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">light_mode</span> UV Index</div>
+                    <div class="stat-label"><span class="material-symbols-rounded" style="font-size:18px;">light_mode</span> <span data-lang-key="UV_INDEX">UV Index</span></div>
                     <div class="stat-value" id="detail-uv">--</div>
                 </div>
             </div>
@@ -988,7 +989,7 @@
             if (!savedLocations.some(l => l.id === newLoc.id)) {
                 savedLocations.push(newLoc);
                 localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
-                Gurasuraisu.showPopup(`Added ${cityData.name}`);
+                Polygol.showPopup(`Added ${cityData.name}`);
             }
             
             searchInput.value = '';
@@ -1097,7 +1098,7 @@
 
 		document.getElementById('delete-location-btn').addEventListener('click', async () => {
 		    if (currentLocationIndex !== null) {
-		        if (await Gurasuraisu.showConfirm("Remove this location?")) {
+		        if (await Polygol.showConfirm("Remove this location?")) {
 		            savedLocations.splice(currentLocationIndex, 1);
 		            localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
 		            switchView('locations');
@@ -1110,9 +1111,9 @@
             renderLocationsGrid();
         });
 
-        window.addEventListener('GurasuraisuReady', () => {
+        window.addEventListener('PolygolReady', () => {
             // Register the widget as soon as the API is confirmed to be ready.
-            Gurasuraisu.registerWidget({
+            Polygol.registerWidget({
                 appName: 'Weather',
                 widgetId: 'weather-current',
                 title: 'Current Weather',
@@ -1123,5 +1124,48 @@
         });
 
     </script>
+<script>
+function getAppLanguage() {
+    let l = (localStorage.getItem('language') || localStorage.getItem('selectedLanguage') || 'EN').toUpperCase();
+    if (l === 'JA') l = 'JP';
+    return ['EN', 'JP', 'KO', 'ZH'].includes(l) ? l : 'EN';
+}
+
+function t(key, params = {}) {
+    const lang = getAppLanguage();
+    const dict = window['LANG_' + lang + '_WEATHER'] || window['LANG_EN_WEATHER'] || {};
+    let str = dict[key] || key;
+    Object.keys(params).forEach(p => str = str.replace(new RegExp('\\{' + p + '\\}', 'g'), params[p]));
+    return str;
+}
+
+function applyLanguage(langCode) {
+    if (langCode) localStorage.setItem('language', langCode);
+    const lang = getAppLanguage();
+    const bcpMap = { EN: 'en-US', JP: 'ja-JP', KO: 'ko-KR', ZH: 'zh-CN' };
+    document.documentElement.lang = bcpMap[lang] || 'en-US';
+    
+    document.querySelectorAll('[data-lang-key]').forEach(el => {
+        const k = el.getAttribute('data-lang-key');
+        if (k) {
+            if (el.tagName === 'TITLE') document.title = t(k);
+            else el.textContent = t(k);
+        }
+    });
+    
+    document.querySelectorAll('[data-lang-placeholder]').forEach(el => {
+        const k = el.getAttribute('data-lang-placeholder');
+        if (k) el.placeholder = t(k);
+    });
+}
+
+window.addEventListener('message', (e) => {
+    if (e.data && (e.data.type === 'languageUpdate' || e.data.type === 'localeUpdate')) {
+        applyLanguage(e.data.languageCode);
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => applyLanguage());
+</script>
 </body>
 </html>

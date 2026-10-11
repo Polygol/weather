@@ -1,5 +1,5 @@
 // Polygol Weather Language Dictionary
-const LANG_EN_WEATHER = {
+window.LANG_EN_WEATHER = {
     TITLE: "Weather",
     TITLE_LEGACY: "Weather (Legacy)",
     HOME: "Home",
@@ -13,7 +13,7 @@ const LANG_EN_WEATHER = {
     REMOVE_LOCATION: "Remove location",
     LOADING_ERROR: "Failed to load weather",
 
-    // Weather Conditions
+    // Weather Conditions,
     COND_0: "Clear Sky",
     COND_1: "Mainly Clear",
     COND_2: "Partly Cloudy",
@@ -41,10 +41,14 @@ const LANG_EN_WEATHER = {
     COND_86: "Heavy Snow Showers",
     COND_95: "Thunderstorm",
     COND_96: "Thunderstorm with Hail",
-    COND_99: "Heavy Thunderstorm with Hail"
+    COND_99: "Heavy Thunderstorm with Hail",
+    TODAY: "Today",
+    REMOVE_LOCATION_CONFIRM: "Remove this location?",
+    LOCATION_ADDED: "Added {name}",
+    UNKNOWN_CONDITION: "Unknown",
 };
 
-const LANG_JP_WEATHER = {
+window.LANG_JP_WEATHER = {
     TITLE: "天気",
     TITLE_LEGACY: "天気 (旧版)",
     HOME: "ホーム",
@@ -85,10 +89,14 @@ const LANG_JP_WEATHER = {
     COND_86: "にわか雪（強）",
     COND_95: "雷雨",
     COND_96: "雹を伴う雷雨",
-    COND_99: "激しい雹を伴う雷雨"
+    COND_99: "激しい雹を伴う雷雨",
+    TODAY: "今日",
+    REMOVE_LOCATION_CONFIRM: "この場所を削除しますか？",
+    LOCATION_ADDED: "{name}を追加しました",
+    UNKNOWN_CONDITION: "不明",
 };
 
-const LANG_KO_WEATHER = {
+window.LANG_KO_WEATHER = {
     TITLE: "날씨",
     TITLE_LEGACY: "날씨 (구버전)",
     HOME: "홈",
@@ -129,10 +137,14 @@ const LANG_KO_WEATHER = {
     COND_86: "강한 눈 소나기",
     COND_95: "뇌우",
     COND_96: "우박을 동반한 뇌우",
-    COND_99: "우박을 동반한 강한 뇌우"
+    COND_99: "우박을 동반한 강한 뇌우",
+    TODAY: "오늘",
+    REMOVE_LOCATION_CONFIRM: "이 위치를 삭제하시겠습니까?",
+    LOCATION_ADDED: "{name} 추가됨",
+    UNKNOWN_CONDITION: "알 수 없음",
 };
 
-const LANG_ZH_WEATHER = {
+window.LANG_ZH_WEATHER = {
     TITLE: "天气",
     TITLE_LEGACY: "天气 (旧版)",
     HOME: "首页",
@@ -173,5 +185,14 @@ const LANG_ZH_WEATHER = {
     COND_86: "大阵雪",
     COND_95: "雷雨",
     COND_96: "雷雨伴有冰雹",
-    COND_99: "强雷雨伴有大冰雹"
+    COND_99: "强雷雨伴有大冰雹",
+    TODAY: "今天",
+    REMOVE_LOCATION_CONFIRM: "确定移除此位置吗？",
+    LOCATION_ADDED: "已添加 {name}",
+    UNKNOWN_CONDITION: "未知天气",
 };
+
+var LANG_EN_WEATHER = window.LANG_EN_WEATHER;
+var LANG_JP_WEATHER = window.LANG_JP_WEATHER;
+var LANG_KO_WEATHER = window.LANG_KO_WEATHER;
+var LANG_ZH_WEATHER = window.LANG_ZH_WEATHER;

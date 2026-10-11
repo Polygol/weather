@@ -583,7 +583,7 @@
         };
 
         function getWeatherInfo(code, isDay = true) {
-            const condition = weatherConditions[code] || { description: 'Unknown', icon: () => 'question_mark' };
+            const baseCond = weatherConditions[code] || { description: 'Unknown', icon: () => 'question_mark' }; const condition = { description: t('COND_' + code) || baseCond.description, icon: baseCond.icon };
             return {
                 desc: condition.description,
                 icon: condition.icon(isDay)
@@ -945,7 +945,7 @@
             searchTimeout = setTimeout(async () => {
                 searchResults.innerHTML = '<div style="padding:20px; text-align:center;"><svg class="loading-spinner" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="currentColor" stroke="none" class="loading-spinner-ind" /></svg></div>';
                 try {
-                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=${({EN:'en',JP:'ja',KO:'ko',ZH:'zh'}[getAppLanguage()]||'en')}&format=json`);
                     const data = await res.json();
                     
                     searchResults.innerHTML = '';
@@ -989,7 +989,7 @@
             if (!savedLocations.some(l => l.id === newLoc.id)) {
                 savedLocations.push(newLoc);
                 localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
-                Polygol.showPopup(`Added ${cityData.name}`);
+                Polygol.showPopup(t('LOCATION_ADDED', {name: cityData.name}));
             }
             
             searchInput.value = '';
@@ -1069,7 +1069,7 @@
                 if (!data.daily.time[i]) break;
                 
                 const date = new Date(data.daily.time[i]);
-                const dayName = i === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'long' });
+                const dayName = i === 0 ? t('TODAY') : date.toLocaleDateString(bcpMap[getAppLanguage()] || 'en-US', { weekday: 'long' });
                 const min = Math.round(data.daily.temperature_2m_min[i]);
                 const max = Math.round(data.daily.temperature_2m_max[i]);
                 const code = data.daily.weather_code[i];
@@ -1098,7 +1098,7 @@
 
 		document.getElementById('delete-location-btn').addEventListener('click', async () => {
 		    if (currentLocationIndex !== null) {
-		        if (await Polygol.showConfirm("Remove this location?")) {
+		        if (await Polygol.showConfirm(t('REMOVE_LOCATION_CONFIRM'))) {
 		            savedLocations.splice(currentLocationIndex, 1);
 		            localStorage.setItem('weather_locations', JSON.stringify(savedLocations));
 		            switchView('locations');
